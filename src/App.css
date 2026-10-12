@@ -108,7 +108,7 @@ a {
 .stories-word {
   left: 50%;
   /* canopy bottom = 23% + 40.5% = 63.5% — STORIES tucks right below. */
-  top: 63.8%;
+  top: 63.9%;   /* just below canopy bottom (63.5%) */
   width: 25%;
   height: auto;
   transform: translate(-50%, 0);

@@ -25,3 +25,5 @@ dist-ssr
 
 # Codebuff workspace helpers (private tooling, not part of the site)
 .freebuff/
+
+.vercel
