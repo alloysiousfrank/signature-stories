@@ -60,6 +60,35 @@ a {
   animation: logoFlight 1s cubic-bezier(.65, 0, .25, 1) 4.2s forwards;
 }
 
+/* Quick replay between pages: same choreography compressed to ~2.4s,
+   tapping the stage skips straight to the page. */
+.intro-replay .intro-logo {
+  animation-duration: .6s;
+  animation-delay: 1.8s;
+}
+
+.intro-replay .canopy-right { animation-duration: .4s; animation-delay: .05s; }
+.intro-replay .canopy-left  { animation-duration: .4s; animation-delay: .45s; }
+.intro-replay .signature-word { animation-duration: .3s; animation-delay: .85s; }
+.intro-replay .stories-word   { animation-duration: .3s; animation-delay: 1.05s; }
+.intro-replay .hanging-heart  {
+  animation-duration: .3s, .4s;
+  animation-delay: 1.25s, 1.55s;
+}
+
+.intro-skip-hint {
+  position: absolute;
+  bottom: max(28px, 4.5vh);
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 12px;
+  letter-spacing: .12em;
+  color: rgba(139, 111, 51, .8);
+  animation: skipHintFade .5s ease 1.2s both;
+  pointer-events: none;
+}
+
 /* While assets preload, freeze every intro animation at its start pose
    so no layer ever pops in half-loaded mid-choreography. */
 .intro-paused,
@@ -120,7 +149,7 @@ a {
      canopy ink bottom sits at 63.5%. Pinned so the VISIBLE word top
      lands at ~63.7% — kissing the canopy's bottom drape tips with a
      hairline gap, exactly like the reference logo.png mark. */
-  top: 59.0%;
+  top: 58.4%;
   width: 25%;
   height: auto;
   transform: translate(-50%, 0);
@@ -234,10 +263,25 @@ a {
 /* Glass blur behind the intro when it REPLAYS on page navigation:
    the incoming page shows through a frosted layer. On the very first
    load (`.intro-glass` absent) the intro keeps its solid beige stage. */
+/* Replay stage: NO beige paint at all — the incoming page shows fully
+   through a frosted glass blur, contents visible behind the intro. */
 .intro-screen.intro-glass {
-  background: rgba(245, 240, 223, .30);
-  -webkit-backdrop-filter: blur(22px) saturate(1.2);
-  backdrop-filter: blur(22px) saturate(1.2);
+  background: rgba(245, 240, 223, .14);
+  -webkit-backdrop-filter: blur(26px) saturate(1.15);
+  backdrop-filter: blur(26px) saturate(1.15);
+}
+
+/* During a replay the incoming page sits behind the frosted stage:
+   visible (not yet animated in) so the blur has real content. */
+.site-shell.replaying {
+  visibility: visible;
+  opacity: 1;
+  animation: none;
+}
+
+@keyframes skipHintFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .site-shell {
@@ -292,8 +336,8 @@ a {
 
 .brand-logo {
   display: block;
-  width: 210px;
-  height: 71px;
+  width: 262px;
+  height: 89px;
   object-fit: contain;
 }
 
@@ -670,10 +714,10 @@ a {
     align-self: center;
   }
 
-  /* Bigger intro-style logo on mobile (per request) */
+  /* Bigger intro-style logo on mobile (per request, +25%) */
   .brand-logo {
-    width: 168px;
-    height: 70px;
+    width: 210px;
+    height: 87px;
   }
 
   /* Desktop inline links become the slide-down drawer */
@@ -728,8 +772,8 @@ a {
 
 @media (max-width: 400px) {
   .brand-logo {
-    width: 148px;
-    height: 62px;
+    width: 172px;
+    height: 72px;
   }
 
   .intro-logo {
@@ -812,6 +856,26 @@ a {
     0 0 14px rgba(185, 154, 85, .45);
   transition: transform .25s ease, box-shadow .25s ease, filter .25s ease;
   flex-shrink: 0;
+  animation: navBookPulse 2.8s ease-in-out 1.2s infinite;
+}
+
+/* Subtle idle glow: the champagne halo breathes, never louder than the
+   hover glow. */
+@keyframes navBookPulse {
+  0%, 100% {
+    box-shadow:
+      0 6px 18px rgba(139, 111, 51, .30),
+      0 0 10px rgba(185, 154, 85, .38);
+  }
+  50% {
+    box-shadow:
+      0 8px 22px rgba(139, 111, 51, .34),
+      0 0 20px rgba(185, 154, 85, .55);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-book { animation: none; }
 }
 
 .nav-book:hover,

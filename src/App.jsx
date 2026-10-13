@@ -85,13 +85,20 @@ function Intro({ replay, onComplete }) {
     if (!done.current) { done.current = true; onComplete(); }
   }, [onComplete]);
 
+  // Replays are short (≈2s); use the matching tighter safety timeout.
   useEffect(() => {
-    const kill = setTimeout(complete, INTRO_PLAY_MS + 600);
+    const kill = setTimeout(complete, (replay ? INTRO_REPLAY_MS : INTRO_PLAY_MS) + 600);
     return () => clearTimeout(kill);
-  }, [complete]);
+  }, [complete, replay]);
 
   return (
-    <div className={`intro-screen ${replay ? "intro-glass" : ""}`}>
+    <div
+      className={`intro-screen ${replay ? "intro-glass intro-replay" : ""}`}
+      onClick={replay ? complete : undefined}
+      role={replay ? "button" : undefined}
+      aria-label={replay ? "Skip intro" : undefined}
+    >
+      {replay && <span className="intro-skip-hint">Tap to skip</span>}
       <div
         className={ready ? "intro-logo" : "intro-logo intro-paused"}
         onAnimationEnd={(event) => {
@@ -335,6 +342,7 @@ function Contact() {
 /* ------------------------------------------------------------------ */
 
 const INTRO_PLAY_MS = 5300; // full intro choreography incl. flight to navbar
+const INTRO_REPLAY_MS = 2500; // quick replay between page navigations
 
 export default function App() {
   const page = useHashRoute();
@@ -356,9 +364,14 @@ export default function App() {
 
   return (
     <>
-      {!introDone && <Intro replay={introReplay} onComplete={() => setIntroDone(true)} />}
+      {!introDone && (
+        <Intro
+          replay={introReplay}
+          onComplete={() => { setIntroDone(true); setIntroReplay(false); }}
+        />
+      )}
 
-      <div className={`site-shell ${introDone ? "site-ready" : ""}`}>
+      <div className={`site-shell ${introDone ? "site-ready" : ""} ${introReplay ? "replaying" : ""}`}>
         <Navbar page={page} go={go} />
         <main className="website-content" data-page={page}>
           {page === "home" && <Home />}
