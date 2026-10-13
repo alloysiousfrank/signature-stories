@@ -142,10 +142,13 @@ a {
   height: 40.5%;
 }
 
-/* heart-pendant.png — cord + red heart only, ink starts at row 0.
-   The canopy's knot (diamond) solidly ends at art row ~124/501, so the
-   cord is re-pinned to START there instead of poking out of the knot's
-   centre: top = 23% + (124/501)*40.5% ≈ 33.0% of the canvas. */
+/* heart-pendant.png — now the red heart blob only (218x208, ink
+   rows 0..207; earlier cord rows fully cropped). Pin its TOP at the
+   canopy knot's end (top = 23% + (124/501)*40.5% ≈ 33.0% of canvas);
+   at 2.7% canvas width the blob renders ≈ 4.0% tall, so its BOTTOM
+   lands at ≈ 37.0% — a hairline above SIGNATURE's resting box top
+   (37.2%), i.e. the heart sits right above the letter A. The tiny
+   cord remnant comes from the canopy art itself. */
 .hanging-heart {
   left: 50.2%;
   top: 33%;
