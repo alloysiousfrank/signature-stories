@@ -166,10 +166,11 @@ function Navbar({ page, go }) {
               {p[0].toUpperCase() + p.slice(1)}
             </a>
           ))}
-          <a className="nav-book" href="#/contact" onClick={navTo("contact")}>
-            Book Now
-          </a>
         </nav>
+
+        <a className="nav-book" href="#/contact" onClick={navTo("contact")}>
+          Book Now
+        </a>
 
         <button
           type="button"
