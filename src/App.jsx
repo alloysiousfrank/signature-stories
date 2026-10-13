@@ -1,5 +1,33 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import "./App.css";
+
+/* Preload every intro asset before the first animation frame so nothing
+   stutters or freezes while the choreography plays. */
+const INTRO_IMAGES = [
+  "/assests/canopy.png",
+  "/assests/signature-word.png",
+  "/assests/stories-lines.png",
+  "/assests/heart-pendant.png",
+  "/assests/logo.png",
+];
+
+function useIntroPreload() {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    let left = INTRO_IMAGES.length;
+    if (!left) { setReady(true); return; }
+    let cancelled = false;
+    for (const src of INTRO_IMAGES) {
+      const im = new Image();
+      im.onload = im.onerror = () => { if (--left === 0 && !cancelled) setReady(true); };
+      im.src = src;
+    }
+    // safety: never block the intro for more than 2.5s
+    const t = setTimeout(() => !cancelled && setReady(true), 2500);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, []);
+  return ready;
+}
 
 const PAGES = ["home", "about", "services", "gallery", "contact"];
 
@@ -45,17 +73,33 @@ function useScrollReveal(page) {
   }, [page]);
 }
 
-function Intro({ onComplete }) {
+function Intro({ replay, onComplete }) {
+  const ready = useIntroPreload();
+
+  // Safety net: if the tab was hidden while the intro ran (browser
+  // throttles CSS animations for background tabs), animationend never
+  // fires — so force completion just after the choreography should end.
+  // animationend usually lands first; this only ever runs as a fallback.
+  const done = useRef(false);
+  const complete = useCallback(() => {
+    if (!done.current) { done.current = true; onComplete(); }
+  }, [onComplete]);
+
+  useEffect(() => {
+    const kill = setTimeout(complete, INTRO_PLAY_MS + 600);
+    return () => clearTimeout(kill);
+  }, [complete]);
+
   return (
-    <div className="intro-screen">
+    <div className={`intro-screen ${replay ? "intro-glass" : ""}`}>
       <div
-        className="intro-logo"
+        className={ready ? "intro-logo" : "intro-logo intro-paused"}
         onAnimationEnd={(event) => {
           if (
             event.target === event.currentTarget &&
             event.animationName === "logoFlight"
           ) {
-            onComplete();
+            complete();
           }
         }}
       >
@@ -89,29 +133,55 @@ function Intro({ onComplete }) {
 }
 
 function Navbar({ page, go }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  // close the drawer whenever the route changes
+  useEffect(() => { setMenuOpen(false); }, [page]);
+
+  const navTo = (p) => (e) => {
+    e.preventDefault();
+    setMenuOpen(false);
+    go(p);
+  };
+
   return (
-    <header className="navbar">
+    <header className={`navbar ${menuOpen ? "nav-open" : ""}`}>
       <a
         className="navbar-brand"
         href="#/home"
-        onClick={(e) => { e.preventDefault(); go("home"); }}
+        onClick={navTo("home")}
         aria-label="Signature Stories home"
       >
         <img className="brand-logo" src="/assests/logo.png" alt="Signature Stories Event Planner" />
       </a>
 
-      <nav aria-label="Main navigation">
-        {PAGES.map((p) => (
-          <a
-            key={p}
-            href={`#/${p}`}
-            className={page === p ? "active" : ""}
-            onClick={(e) => { e.preventDefault(); go(p); }}
-          >
-            {p[0].toUpperCase() + p.slice(1)}
+      <div className="nav-actions">
+        <nav aria-label="Main navigation">
+          {PAGES.map((p) => (
+            <a
+              key={p}
+              href={`#/${p}`}
+              className={page === p ? "active" : ""}
+              onClick={navTo(p)}
+            >
+              {p[0].toUpperCase() + p.slice(1)}
+            </a>
+          ))}
+          <a className="nav-book" href="#/contact" onClick={navTo("contact")}>
+            Book Now
           </a>
-        ))}
-      </nav>
+        </nav>
+
+        <button
+          type="button"
+          className="hamburger"
+          aria-expanded={menuOpen}
+          aria-controls="main-nav"
+          aria-label={menuOpen ? "Close menu" : "Open menu"}
+          onClick={() => setMenuOpen((open) => !open)}
+        >
+          <span /> <span /> <span />
+        </button>
+      </div>
     </header>
   );
 }
@@ -271,17 +341,21 @@ export default function App() {
   const go = (p) => { window.location.hash = `#/${p}`; };
 
   // When the hash route changes after intro has completed, replay the intro.
+  // On replays the intro stage shows the incoming page through a frosted
+  // glass blur; only the very first load keeps the solid beige background.
   const firstRun = useRef(true);
   useEffect(() => {
     if (firstRun.current) { firstRun.current = false; return; }
+    setIntroReplay(true);
     setIntroDone(false);
   }, [page]);
+  const [introReplay, setIntroReplay] = useState(false);
 
   useScrollReveal(page);
 
   return (
     <>
-      {!introDone && <Intro onComplete={() => setIntroDone(true)} />}
+      {!introDone && <Intro replay={introReplay} onComplete={() => setIntroDone(true)} />}
 
       <div className={`site-shell ${introDone ? "site-ready" : ""}`}>
         <Navbar page={page} go={go} />
