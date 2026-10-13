@@ -73,7 +73,27 @@ function useScrollReveal(page) {
   }, [page]);
 }
 
-function Intro({ replay, onComplete }) {
+/* Replays are a LOADING slide, not the full choreography: the finished
+   logo appears at once and glides to the navbar. Duration follows the
+   visitor's connection (Network Information API) so it reads as loading
+   on slow links but never drags on fast ones — and is never "too fast". */
+function estimateReplayMs() {
+  const c = typeof navigator !== "undefined"
+    ? (navigator.connection || navigator.mozConnection || navigator.webkitConnection)
+    : null;
+  let ms;
+  switch (c && c.effectiveType) {
+    case "slow-2g":
+    case "2g": ms = 2200; break;
+    case "3g": ms = 1800; break;
+    case "4g": ms = 1400; break;
+    default: ms = 1200; break;
+  }
+  if (c && c.saveData) ms = Math.max(ms, 2000);
+  return Math.min(Math.max(ms, 900), 2400);
+}
+
+function Intro({ replay, replayMs, onComplete }) {
   const ready = useIntroPreload();
 
   // Safety net: if the tab was hidden while the intro ran (browser
@@ -85,21 +105,22 @@ function Intro({ replay, onComplete }) {
     if (!done.current) { done.current = true; onComplete(); }
   }, [onComplete]);
 
-  // Replays are short (≈2s); use the matching tighter safety timeout.
   useEffect(() => {
-    const kill = setTimeout(complete, (replay ? INTRO_REPLAY_MS : INTRO_PLAY_MS) + 600);
+    const limit = replay ? replayMs + 800 : INTRO_PLAY_MS + 600;
+    const kill = setTimeout(complete, limit);
     return () => clearTimeout(kill);
-  }, [complete, replay]);
+  }, [complete, replay, replayMs]);
 
   return (
     <div
-      className={`intro-screen ${replay ? "intro-glass intro-replay" : ""}`}
+      className={`intro-screen ${replay ? "intro-glass intro-quick" : ""}`}
       onClick={replay ? complete : undefined}
       role={replay ? "button" : undefined}
       aria-label={replay ? "Skip intro" : undefined}
     >
       {replay && <span className="intro-skip-hint">Tap to skip</span>}
       <div
+        style={{ "--replay-ms": `${replayMs}ms` }}
         className={ready ? "intro-logo" : "intro-logo intro-paused"}
         onAnimationEnd={(event) => {
           if (
@@ -342,7 +363,6 @@ function Contact() {
 /* ------------------------------------------------------------------ */
 
 const INTRO_PLAY_MS = 5300; // full intro choreography incl. flight to navbar
-const INTRO_REPLAY_MS = 2500; // quick replay between page navigations
 
 export default function App() {
   const page = useHashRoute();
@@ -355,10 +375,12 @@ export default function App() {
   const firstRun = useRef(true);
   useEffect(() => {
     if (firstRun.current) { firstRun.current = false; return; }
+    setReplayMs(estimateReplayMs());
     setIntroReplay(true);
     setIntroDone(false);
   }, [page]);
   const [introReplay, setIntroReplay] = useState(false);
+  const [replayMs, setReplayMs] = useState(() => estimateReplayMs());
 
   useScrollReveal(page);
 
@@ -367,6 +389,7 @@ export default function App() {
       {!introDone && (
         <Intro
           replay={introReplay}
+          replayMs={replayMs}
           onComplete={() => { setIntroDone(true); setIntroReplay(false); }}
         />
       )}

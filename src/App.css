@@ -60,20 +60,46 @@ a {
   animation: logoFlight 1s cubic-bezier(.65, 0, .25, 1) 4.2s forwards;
 }
 
-/* Quick replay between pages: same choreography compressed to ~2.4s,
-   tapping the stage skips straight to the page. */
-.intro-replay .intro-logo {
-  animation-duration: .6s;
-  animation-delay: 1.8s;
+/* Replay between pages = LOADING SLIDE, not the choreography: the
+   finished logo shows at once, breathes gently for --replay-ms (which
+   follows the visitor's connection speed), then glides to the navbar
+   and hands over to the page. Tapping the stage skips straight away. */
+.intro-quick .intro-logo {
+  opacity: 1;                    /* full logo visible immediately */
+  animation: logoFlight 0.9s cubic-bezier(.65, 0, .25, 1) var(--replay-ms) forwards;
 }
 
-.intro-replay .canopy-right { animation-duration: .4s; animation-delay: .05s; }
-.intro-replay .canopy-left  { animation-duration: .4s; animation-delay: .45s; }
-.intro-replay .signature-word { animation-duration: .3s; animation-delay: .85s; }
-.intro-replay .stories-word   { animation-duration: .3s; animation-delay: 1.05s; }
-.intro-replay .hanging-heart  {
-  animation-duration: .3s, .4s;
-  animation-delay: 1.25s, 1.55s;
+/* Kill the first-load choreography on replay and pin every layer to
+   its final pose so the mark appears whole. */
+.intro-quick .canopy-right,
+.intro-quick .canopy-left {
+  animation: none;
+  clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
+}
+
+.intro-quick .signature-word,
+.intro-quick .stories-word {
+  animation: none;
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.intro-quick .hanging-heart {
+  animation: none;
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* Gentle breathing while the hold, so it reads as "loading" not "stuck".
+   Uses the `scale` property so it composes with each layer's own
+   translate() instead of clobbering it. */
+.intro-quick .logo-layer {
+  animation: replayBreathe calc(var(--replay-ms) + 1200ms) ease-in-out 0s infinite;
+}
+
+@keyframes replayBreathe {
+  0%, 100% { scale: 1; }
+  50%      { scale: 1.035; }
 }
 
 .intro-skip-hint {
@@ -114,15 +140,13 @@ a {
   height: 40.5%;
 }
 
-/* heart-pendant.png — cord + red heart only. Trimmed a further
-   '.stick too high' sliver off the top (16 more rows), so the cord
-   begins right where the canopy's own knot ends (its cap is baked
-   onto the canopy art at finial y = 23% + row0). Pin top of cord to
-   the knot centre: canopy knot centre sits ≈ 23% + (26/501)*40.5%
-   ≈ 25.1% of canvas. Width reduced to 2.7%. */
+/* heart-pendant.png — cord + red heart only, ink starts at row 0.
+   The canopy's knot (diamond) solidly ends at art row ~124/501, so the
+   cord is re-pinned to START there instead of poking out of the knot's
+   centre: top = 23% + (124/501)*40.5% ≈ 33.0% of the canvas. */
 .hanging-heart {
   left: 50.2%;
-  top: 25%;
+  top: 33%;
   width: 2.7%;
   height: auto;
   transform: translateX(-50%);
