@@ -60,46 +60,48 @@ a {
   animation: logoFlight 1s cubic-bezier(.65, 0, .25, 1) 4.2s forwards;
 }
 
-/* Replay between pages = LOADING SLIDE, not the choreography: the
-   finished logo shows at once, breathes gently for --replay-ms (which
-   follows the visitor's connection speed), then glides to the navbar
-   and hands over to the page. Tapping the stage skips straight away. */
+/* Replay between pages = the SAME element-by-element choreography as the
+   first load, compressed proportionally so it reads as a fast loading
+   reveal, never a frozen logo. --r is the time unit (replayMs / 5.2). */
 .intro-quick .intro-logo {
-  opacity: 1;                    /* full logo visible immediately */
-  animation: logoFlight 0.9s cubic-bezier(.65, 0, .25, 1) var(--replay-ms) forwards;
+  animation: logoFlight 0.9s cubic-bezier(.65, 0, .25, 1) calc(4.2 * var(--r) * 1s) forwards;
 }
 
-/* Kill the first-load choreography on replay and pin every layer to
-   its final pose so the mark appears whole. */
-.intro-quick .canopy-right,
+.intro-quick .canopy-right {
+  animation-delay: calc(0.25 * var(--r) * 1s);
+  animation-duration: calc(0.85 * var(--r) * 1.6 * 1s);
+}
+
 .intro-quick .canopy-left {
-  animation: none;
-  clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
+  animation-delay: calc(1.15 * var(--r) * 1s);
+  animation-duration: calc(0.85 * var(--r) * 1.6 * 1s);
 }
 
-.intro-quick .signature-word,
+.intro-quick .signature-word {
+  animation-delay: calc(2.05 * var(--r) * 1s);
+  animation-duration: calc(0.55 * var(--r) * 1.6 * 1s);
+}
+
 .intro-quick .stories-word {
-  animation: none;
-  opacity: 1;
-  transform: translate(-50%, 0);
+  animation-delay: calc(2.6 * var(--r) * 1s);
+  animation-duration: calc(0.5 * var(--r) * 1.6 * 1s);
 }
 
 .intro-quick .hanging-heart {
-  animation: none;
-  opacity: 1;
-  transform: translate(-50%, 0);
+  animation-delay: calc(3.1 * var(--r) * 1s), calc(3.7 * var(--r) * 1s);
+  animation-duration: calc(0.6 * var(--r) * 1.6 * 1s), calc(0.9 * var(--r) * 1.6 * 1s);
 }
 
-/* Gentle breathing while the hold, so it reads as "loading" not "stuck".
-   Uses the `scale` property so it composes with each layer's own
+/* Gentle breathing on the canopy hold, so the reveal reads as "loading"
+   and not "stuck". Uses `scale` so it composes with each layer's own
    translate() instead of clobbering it. */
-.intro-quick .logo-layer {
-  animation: replayBreathe calc(var(--replay-ms) + 1200ms) ease-in-out 0s infinite;
+.intro-quick .canopy-layer {
+  animation: replayBreathe calc(var(--replay-ms) + 1400ms) ease-in-out 0s infinite;
 }
 
 @keyframes replayBreathe {
   0%, 100% { scale: 1; }
-  50%      { scale: 1.035; }
+  50%      { scale: 1.02; }
 }
 
 .intro-skip-hint {

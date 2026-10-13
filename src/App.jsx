@@ -120,7 +120,7 @@ function Intro({ replay, replayMs, onComplete }) {
     >
       {replay && <span className="intro-skip-hint">Tap to skip</span>}
       <div
-        style={{ "--replay-ms": `${replayMs}ms` }}
+        style={{ "--replay-ms": `${replayMs}ms`, "--r": `${(replayMs / 5200).toFixed(4)}` }}
         className={ready ? "intro-logo" : "intro-logo intro-paused"}
         onAnimationEnd={(event) => {
           if (
