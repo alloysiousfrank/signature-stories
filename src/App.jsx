@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import "./App.css";
+import "./luxury.css";
+import { About, Contact, Gallery, Home, Services } from "./pages.jsx";
+import { LuxuryLayer } from "./ui.jsx";
 
 /* Preload every intro asset before the first animation frame so nothing
    stutters or freezes while the choreography plays. */
@@ -226,141 +229,6 @@ function Footer() {
 }
 
 /* ------------------------------------------------------------------ */
-/* Pages                                                               */
-/* ------------------------------------------------------------------ */
-
-function Home() {
-  return (
-    <>
-      <section className="hero glass-card" >
-        <p className="eyebrow" data-reveal>SIGNATURE STORIES · EVENT PLANNER</p>
-        <h1 data-reveal>Every occasion deserves a story.</h1>
-        <p className="hero-description" data-reveal>
-          Thoughtfully planned celebrations, beautifully remembered moments —
-          designed with care, delivered with grace.
-        </p>
-        <a className="contact-link" href="#/contact" data-reveal>Plan your event</a>
-      </section>
-
-      <section className="split-section glass-card" data-reveal>
-        <img className="section-img" src="/assests/events-hero.jpeg" alt="Elegant event table setting" />
-        <div className="split-copy">
-          <p className="eyebrow">WHAT WE DO</p>
-          <h2>Weddings, celebrations and everything between.</h2>
-          <p>
-            From intimate gatherings to grand receptions, we shape each
-            occasion around the people at its heart.
-          </p>
-        </div>
-      </section>
-    </>
-  );
-}
-
-function About() {
-  return (
-    <>
-      <section className="page-head glass-card" data-reveal>
-        <p className="eyebrow">OUR STORY</p>
-        <h1>Made personal. Remembered forever.</h1>
-        <p className="hero-description">
-          Signature Stories is an event planning studio built on one belief:
-          the best celebrations feel like the people they were made for.
-        </p>
-      </section>
-
-      <section className="split-section glass-card" data-reveal>
-        <div className="split-copy">
-          <p className="eyebrow">OUR APPROACH</p>
-          <h2>Listen first. Design second.</h2>
-          <p>
-            Every plan begins with a conversation — your story, your style,
-            your pace. Then we build the day around it, detail by detail.
-          </p>
-        </div>
-        <img className="section-img" src="/assests/events-planning.jpeg" alt="Planner arranging event details" />
-      </section>
-    </>
-  );
-}
-
-const SERVICES = [
-  { title: "Wedding Planning", copy: "Full-service wedding design and coordination, from first sketch to final send-off.", img: "/assests/events-wedding.jpeg" },
-  { title: "Private Celebrations", copy: "Birthdays, anniversaries and reunions that feel effortless and unmistakably yours.", img: "/assests/events-party.jpeg" },
-  { title: "Corporate Events", copy: "Launches, galas and off-sites with polish, precision and a little theatre.", img: "/assests/events-corporate.jpeg" },
-];
-
-function Services() {
-  return (
-    <>
-      <section className="page-head glass-card" data-reveal>
-        <p className="eyebrow">SERVICES</p>
-        <h1>Crafted for every kind of occasion.</h1>
-      </section>
-
-      <div className="card-grid">
-        {SERVICES.map((s, i) => (
-          <article className="service-card glass-card" key={s.title} data-reveal style={{ transitionDelay: `${i * 90}ms` }}>
-            <img className="section-img" src={s.img} alt={s.title} />
-            <h2>{s.title}</h2>
-            <p>{s.copy}</p>
-            <a className="contact-link small" href="#/contact">Enquire</a>
-          </article>
-        ))}
-      </div>
-    </>
-  );
-}
-
-const GALLERY = [
-  "/assests/events-hero.jpeg",
-  "/assests/events-wedding.jpeg",
-  "/assests/events-party.jpeg",
-  "/assests/events-corporate.jpeg",
-  "/assests/events-planning.jpeg",
-  "/assests/events-table.jpeg",
-];
-
-function Gallery() {
-  return (
-    <>
-      <section className="page-head glass-card" data-reveal>
-        <p className="eyebrow">GALLERY</p>
-        <h1>Selected moments.</h1>
-      </section>
-
-      <div className="gallery-grid">
-        {GALLERY.map((src, i) => (
-          <figure className="gallery-item glass-card" key={src} data-reveal style={{ transitionDelay: `${i * 70}ms` }}>
-            <img src={src} alt={`Event gallery ${i + 1}`} loading="lazy" />
-          </figure>
-        ))}
-      </div>
-    </>
-  );
-}
-
-function Contact() {
-  return (
-    <section className="page-head glass-card contact-page" data-reveal>
-      <p className="eyebrow">CONTACT</p>
-      <h1>Let's plan your story.</h1>
-      <p className="hero-description">
-        Tell us about your occasion — dates, guest count, the feeling you're
-        after — and we'll take it from there.
-      </p>
-      <form className="contact-form" onSubmit={(e) => e.preventDefault()}>
-        <input type="text" name="name" placeholder="Your name" required />
-        <input type="email" name="email" placeholder="Email address" required />
-        <input type="tel" name="phone" placeholder="Phone (optional)" />
-        <textarea name="message" rows="4" placeholder="Tell us about your event…" required />
-        <button className="contact-link" type="submit">Send enquiry</button>
-      </form>
-    </section>
-  );
-}
-
-/* ------------------------------------------------------------------ */
 
 const INTRO_PLAY_MS = 5300; // full intro choreography incl. flight to navbar
 
@@ -404,6 +272,7 @@ export default function App() {
           {page === "contact" && <Contact />}
         </main>
         <Footer />
+        <LuxuryLayer />
       </div>
     </>
   );
