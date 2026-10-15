@@ -334,6 +334,8 @@ export function Packages() {
           >
             <p className="package-tag">{p.tag}</p>
             <h3>{p.name}</h3>
+            <p className="package-guests">{p.guests}</p>
+            <p className="package-ideal">{p.ideal}</p>
             <ul>
               {p.points.map((pt) => <li key={pt}>{pt}</li>)}
             </ul>

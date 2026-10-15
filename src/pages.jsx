@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { CONTACT_EMAIL, FORM_ENDPOINT, SOCIALS, WHATSAPP_NUMBER } from "./config.js";
-import { EVENT_TYPES, GALLERY, SERVICES } from "./content.js";
+import { EVENT_TYPES, GALLERY, IMAGES, SERVICES } from "./content.js";
 import {
   CtaBand,
   Faq,
@@ -15,6 +15,27 @@ import {
   Stats,
   Testimonials,
 } from "./ui.jsx";
+
+function MomentsStrip() {
+  const picks = [GALLERY[0], GALLERY[1], GALLERY[4]];
+  return (
+    <section className="moments">
+      <header className="section-head is-center" data-reveal>
+        <p className="eyebrow">RECENT MOMENTS</p>
+        <h2>A glimpse of the stories we have told.</h2>
+      </header>
+      <div className="moments-grid">
+        {picks.map((g, i) => (
+          <a className="moment" key={g.src} href="#/gallery" data-reveal style={{ transitionDelay: `${i * 110}ms` }}>
+            <img src={g.src} alt={g.title} loading="lazy" decoding="async" />
+            <span><em>{g.category}</em>{g.title}</span>
+          </a>
+        ))}
+      </div>
+      <p className="moments-link" data-reveal><a className="text-link" href="#/gallery">View the full gallery →</a></p>
+    </section>
+  );
+}
 
 export function Home() {
   return (
@@ -41,7 +62,7 @@ export function Home() {
       <Ornament label="WHAT WE DO" />
 
       <section className="split-section glass-card" data-reveal>
-        <img className="section-img" src="/assests/events-hero.jpeg" alt="Elegant event table setting" />
+        <img className="section-img" src={IMAGES.table} alt="Candlelit table set for an elegant dinner" />
         <div className="split-copy">
           <p className="eyebrow">WHAT WE DO</p>
           <h2>Weddings, celebrations and everything between.</h2>
@@ -55,6 +76,7 @@ export function Home() {
 
       <Stats />
       <Promises />
+      <MomentsStrip />
       <Process />
       <Testimonials />
       <CtaBand />
@@ -83,7 +105,7 @@ export function About() {
             your pace. Then we build the day around it, detail by detail.
           </p>
         </div>
-        <img className="section-img" src="/assests/events-planning.jpeg" alt="Planner arranging event details" />
+        <img className="section-img" src={IMAGES.planning} alt="Mood board, colour swatches and planning notebook" />
       </section>
 
       <Promises />
