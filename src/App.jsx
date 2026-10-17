@@ -1,15 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import "./App.css";
+import IntroReveal from "./IntroReveal.jsx";
+import { REVEAL_IMAGES } from "./introImages.js";
 
 /* Preload every intro asset before the first animation frame so nothing
    stutters or freezes while the choreography plays. */
-const INTRO_IMAGES = [
-  "/assests/canopy.png",
-  "/assests/signature-word.png",
-  "/assests/stories-lines.png",
-  "/assests/heart-pendant.png",
-  "/assests/logo.png",
-];
+const INTRO_IMAGES = [...REVEAL_IMAGES, "/assests/logo.png"];
 
 function useIntroPreload() {
   const [ready, setReady] = useState(false);
@@ -120,7 +116,12 @@ function Intro({ replay, replayMs, onComplete }) {
     >
       {replay && <span className="intro-skip-hint">Tap to skip</span>}
       <div
-        style={{ "--replay-ms": `${replayMs}ms`, "--r": `${(replayMs / 5200).toFixed(4)}` }}
+        style={{
+          "--replay-ms": `${replayMs}ms`,
+          "--r": `${(replayMs / 5200).toFixed(4)}`,
+          // artwork time scale: 1 on first load; on replays the flight still starts at 4.2 * --r
+          "--t": replay ? ((replayMs / 5200) * (4.2 / FLIGHT_START_S)).toFixed(4) : "1",
+        }}
         className={ready ? "intro-logo" : "intro-logo intro-paused"}
         onAnimationEnd={(event) => {
           if (
@@ -131,30 +132,7 @@ function Intro({ replay, replayMs, onComplete }) {
           }
         }}
       >
-        <div className="logo-layer canopy-layer">
-          <div className="canopy-half canopy-right">
-            <img src="/assests/canopy.png" alt="" />
-          </div>
-          <div className="canopy-half canopy-left">
-            <img src="/assests/canopy.png" alt="" />
-          </div>
-        </div>
-
-        <img
-          className="logo-layer signature-word"
-          src="/assests/signature-word.png"
-          alt="SIGNATURE"
-        />
-        <img
-          className="logo-layer stories-word"
-          src="/assests/stories-lines.png"
-          alt="STORIES"
-        />
-        <img
-          className="logo-layer hanging-heart"
-          src="/assests/heart-pendant.png"
-          alt=""
-        />
+        <IntroReveal />
       </div>
     </div>
   );
@@ -362,7 +340,8 @@ function Contact() {
 
 /* ------------------------------------------------------------------ */
 
-const INTRO_PLAY_MS = 5300; // full intro choreography incl. flight to navbar
+const FLIGHT_START_S = 9.3; // keep in sync with .intro-logo animation-delay in App.css
+const INTRO_PLAY_MS = 10500; // full intro choreography incl. flight to navbar
 
 export default function App() {
   const page = useHashRoute();

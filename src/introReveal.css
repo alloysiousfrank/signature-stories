@@ -1,0 +1,317 @@
+/* Intro reveal artwork: full curtain splits and loops back, SIGNATURE / STORIES / heart animate in,
+   tied-back curtain closes behind them. Lives inside .intro-logo, so the background, the intro
+   stage and the flight to the navbar are untouched (see App.css).
+   --t scales every time value: 1 on first load, a fraction on replays (set in App.jsx). */
+.cr-stage {
+    --beige: #d0cbb0;
+    --gold: #b99a55;
+    --gold-light: #f1dc9c;
+    --gold-deep: #8b6f33;
+  }
+  
+
+  /* ---------------------------------------------------------------
+     Stage = a 16:9 window onto the reference artwork. Every number
+     below was measured from the reference image.
+     --------------------------------------------------------------- */
+  .cr-stage {
+    container-type: inline-size;
+    position: absolute;
+    left: 1.134%;
+    top: 1.654%;
+    width: 98.122%;
+    aspect-ratio: 16 / 9;
+    /* 1:1 with the reference logo would be left 15.335% / top 14.925% / width 70.288%; scaled x1.396 about the ink centre */
+  }
+    .cr-layer { position: absolute; inset: 0; pointer-events: none; }
+  .cr-stage img { display: block; user-select: none; -webkit-user-drag: none; max-width: none; }
+
+  .cr-glow {
+    position: absolute; left: 8.18%; right:8.18%; top:8.89%; bottom:3.03%;;
+    background: radial-gradient(closest-side, rgba(241, 220, 156, .8), rgba(241, 220, 156, 0));
+    filter: blur(6px);
+  }
+
+  /* ---------- curtain frames (open = tied back, closed = full) ---------- */
+  .cr-frame { position: absolute; aspect-ratio: 1672 / 940; }
+  .cr-open-frame   { left:10.909%; top:12.121%; width:77.520%; }
+  .cr-closed-frame { left:8.705%; top:12.154%; width:81.928%; }
+  .cr-half { position: absolute; top: 0; height: 100%; width: 50.15%; overflow: hidden; }
+  .cr-half.cr-l { left: 0; }
+  .cr-half.cr-r { left: 49.85%; }
+  .cr-half img { position: absolute; top: 0; height: 100%; width: 199.4%; }
+  .cr-half.cr-l img { left: 0; }
+  .cr-half.cr-r img { left: -99.4%; }
+
+  /* closed curtain = ONE piece that orbits the lettering, front -> back */
+  .cr-whole img { width: 100%; height: auto; }
+  /* each half is its own panel, turning about its own centre */
+  .cr-hf { position: absolute; overflow: hidden; transform-origin: 50% 0; will-change: transform, filter; }
+  .cr-hf .cr-flip { position: absolute; inset: 0; }
+  .cr-hf.cr-back .cr-flip { transform: scaleX(-1); }   /* turned 180deg by the loop, so it lands upright */
+  .cr-hf img { position: absolute; top: 0; height: 100%; width: 199.4%; max-width: none; }
+  .cr-hf.cr-l img { left: 0; }
+  .cr-hf.cr-r img { left: -99.4%; }
+
+  .cr-open-frame .cr-half.cr-l { transform-origin: 0 0; }
+  .cr-open-frame .cr-half.cr-r { transform-origin: 100% 0; }
+  .cr-open-frame .cr-half img { transform-origin: 50% 0; }
+
+  .cr-sheen {
+    position: absolute; inset: 0; opacity: 0;
+    background: linear-gradient(105deg, rgba(255,255,255,0) 40%, rgba(255,255,255,.75) 50%, rgba(255,255,255,0) 60%);
+    background-size: 320% 100%; background-position: 100% 0;
+    -webkit-mask-size: 100% 100%; mask-size: 100% 100%;
+  }
+
+  /* ---------- lettering ---------- */
+  .cr-sig { position: absolute; left:9.727%; top:40.404%; width:79.686%; aspect-ratio: 2048 / 341; }
+  .cr-sig-full { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .cr-letters { position: absolute; inset: 0; opacity: 0; }
+  .cr-lt { position: absolute; top: 0; height: 100%; }
+  .cr-lt-in { position: absolute; inset: 0; overflow: hidden; }
+  .cr-lt-in img { position: absolute; top: 0; height: 100%; }
+  .cr-glint {
+    position: absolute; inset: 0; opacity: 0;
+    background: linear-gradient(105deg, rgba(255,255,255,0) 38%, rgba(255,255,255,.95) 50%, rgba(255,255,255,0) 62%);
+    background-size: 320% 100%; background-position: 100% 0;
+    -webkit-mask-size: 100% 100%; mask-size: 100% 100%;
+  }
+  .cr-sto { position: absolute; left:27.364%; top:60.444%; width:44.978%; }
+  .cr-sto img { width: 100%; height: auto; }
+  .cr-sto-ext {
+    position: absolute; height: .32%; border-radius: 2px;
+    background: linear-gradient(90deg, rgba(185,154,85,0), #d9b765 65%, #f3dc9a);
+    box-shadow: 0 0 6px rgba(241, 220, 156, .7);
+    transform-origin: 100% 50%;
+  }
+  .cr-sto-ext.cr-r { background: linear-gradient(270deg, rgba(185,154,85,0), #d9b765 65%, #f3dc9a); transform-origin: 0 50%; }
+
+  /* ---------- hanging heart ---------- */
+  .cr-pendant-clip { position: absolute; left:47.488%; top:14.085%; width:4.611%; aspect-ratio: 224 / 690; clip-path: inset(0 -150% -30% -150%); }
+  .cr-pendant-swing { position: absolute; inset: 0; transform-origin: 50% 0; }
+  .cr-pendant { position: absolute; inset: 0; }
+  .cr-pendant img { width: 100%; height: auto; }
+  .cr-burst {
+    position: absolute; left:49.77%; top:35.39%; width:2%; aspect-ratio: 1; border-radius: 50%;
+    transform: translate(-50%, -50%);
+    border: 2px solid rgba(241, 220, 156, .9);
+    box-shadow: 0 0 18px rgba(241, 220, 156, .8), inset 0 0 14px rgba(241, 220, 156, .6);
+    opacity: 0;
+  }
+
+  /* ---------- sparkles + dust ---------- */
+  .cr-spark {
+    position: absolute; width: 1.9%; aspect-ratio: 1; opacity: 0;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle, #fff 0 8%, rgba(255, 241, 190, .95) 12%, rgba(241, 220, 156, 0) 62%);
+    clip-path: polygon(50% 0, 58% 42%, 100% 50%, 58% 58%, 50% 100%, 42% 58%, 0 50%, 42% 42%);
+  }
+  .cr-dust {
+    position: absolute; width: .45%; aspect-ratio: 1; border-radius: 50%; opacity: 0;
+    background: radial-gradient(circle, rgba(241, 220, 156, .95), rgba(185, 154, 85, 0) 70%);
+  }
+
+
+  /* =================================================================
+     TIMELINE (seconds)
+       0.3  full closed curtain rises into the centre
+       1.0  silk sheen sweeps across it
+       1.9  curtain is drawn: left half slides left, right half slides right, on arcs
+       3.55 (halfway) every letter of SIGNATURE animates in, each its
+            own way, all at once
+       4.5  tied-back curtains settle in at the back
+       5.9  STORIES fades in
+       7.3  heart pendant lowers, swings, settles above the A
+       9.0  final glint
+     Base styles are the FINAL pose, so reduced motion shows the logo.
+     ================================================================= */
+  .cr-stage .cr-glow { animation: crk-glowIn calc(2.4 * var(--t, 1) * 1s) ease calc(4.6 * var(--t, 1) * 1s) both; }
+  .cr-stage .cr-closed-wrap { animation: crk-rise calc(1.4 * var(--t, 1) * 1s) cubic-bezier(.2, .75, .2, 1) calc(.3 * var(--t, 1) * 1s) both; }
+  .cr-stage .cr-sheen { animation: crk-sheen calc(.8 * var(--t, 1) * 1s) ease-in-out calc(1.0 * var(--t, 1) * 1s) both; }
+  .cr-stage .cr-whole { animation: crk-wholeOut calc(.01 * var(--t, 1) * 1s) linear calc(1.8 * var(--t, 1) * 1s) forwards; }
+  .cr-stage .cr-hf.cr-front.cr-l { animation: crk-fl calc(1.5 * var(--t, 1) * 1s) linear calc(1.8 * var(--t, 1) * 1s) forwards; }
+  .cr-stage .cr-hf.cr-front.cr-r { animation: crk-fr calc(1.5 * var(--t, 1) * 1s) linear calc(1.8 * var(--t, 1) * 1s) forwards; }
+
+  .cr-stage .cr-letters  { animation: crk-lettersOut calc(.01 * var(--t, 1) * 1s) linear calc(5.65 * var(--t, 1) * 1s) both; }
+  .cr-stage .cr-sig-full { animation: crk-fullIn calc(.45 * var(--t, 1) * 1s) ease-out calc(5.2 * var(--t, 1) * 1s) both; }
+  .cr-stage .cr-lt-S { animation: crk-aS calc(1.5 * var(--t, 1) * 1s) cubic-bezier(.3, .7, .2, 1) calc(3.40 * var(--t, 1) * 1s) both; }
+  .cr-stage .cr-lt-I { animation: crk-aI calc(1.0 * var(--t, 1) * 1s) cubic-bezier(.4, 0, .2, 1) calc(3.47 * var(--t, 1) * 1s) both; }
+  .cr-stage .cr-lt-G { animation: crk-aG calc(1.6 * var(--t, 1) * 1s) cubic-bezier(.2, .9, .25, 1.08) calc(3.51 * var(--t, 1) * 1s) both; }
+  .cr-stage .cr-lt-N { animation: crk-aN calc(1.3 * var(--t, 1) * 1s) cubic-bezier(.25, .8, .25, 1) calc(3.40 * var(--t, 1) * 1s) both; }
+  .cr-stage .cr-lt-A { animation: crk-aA calc(1.45 * var(--t, 1) * 1s) cubic-bezier(.2, .8, .2, 1.12) calc(3.53 * var(--t, 1) * 1s) both; }
+  .cr-stage .cr-lt-T { animation: crk-aT calc(1.25 * var(--t, 1) * 1s) cubic-bezier(.3, .9, .3, 1.1) calc(3.45 * var(--t, 1) * 1s) both; }
+  .cr-stage .cr-lt-U { animation: crk-aU calc(1.4 * var(--t, 1) * 1s) cubic-bezier(.25, .8, .25, 1) calc(3.55 * var(--t, 1) * 1s) both; }
+  .cr-stage .cr-lt-R { animation: crk-aR calc(1.55 * var(--t, 1) * 1s) cubic-bezier(.2, .9, .25, 1.1) calc(3.45 * var(--t, 1) * 1s) both; }
+  .cr-stage .cr-lt-E { animation: crk-aE calc(1.2 * var(--t, 1) * 1s) cubic-bezier(.3, .7, .2, 1) calc(3.43 * var(--t, 1) * 1s) both; }
+
+  .cr-stage .cr-open-frame .cr-half.cr-l { animation: crk-openL calc(1.7 * var(--t, 1) * 1s) cubic-bezier(.25, .7, .2, 1) calc(4.0 * var(--t, 1) * 1s) both; }
+  .cr-stage .cr-open-frame .cr-half.cr-r { animation: crk-openR calc(1.7 * var(--t, 1) * 1s) cubic-bezier(.25, .7, .2, 1) calc(4.0 * var(--t, 1) * 1s) both; }
+  .cr-stage .cr-open-frame .cr-half.cr-l img { animation: crk-swayL calc(8 * var(--t, 1) * 1s) ease-in-out calc(6 * var(--t, 1) * 1s) infinite; }
+  .cr-stage .cr-open-frame .cr-half.cr-r img { animation: crk-swayR calc(8 * var(--t, 1) * 1s) ease-in-out calc(6 * var(--t, 1) * 1s) infinite; }
+
+  .cr-stage .cr-sto { animation: crk-storiesIn calc(1.7 * var(--t, 1) * 1s) cubic-bezier(.2, .7, .2, 1) calc(5.1 * var(--t, 1) * 1s) both; }
+  .cr-stage .cr-sto-ext { animation: crk-extIn calc(1.2 * var(--t, 1) * 1s) ease-out calc(5.9 * var(--t, 1) * 1s) both; }
+  .cr-stage .cr-pendant { animation: crk-lower calc(1.4 * var(--t, 1) * 1s) cubic-bezier(.45, 0, .25, 1) calc(6.0 * var(--t, 1) * 1s) both; }
+  .cr-stage .cr-pendant-swing { animation: crk-pendulum calc(3.4 * var(--t, 1) * 1s) ease-in-out calc(7.25 * var(--t, 1) * 1s) both; }
+  .cr-stage .cr-burst { animation: crk-burst calc(1.0 * var(--t, 1) * 1s) ease-out calc(7.2 * var(--t, 1) * 1s) both; }
+  .cr-stage .cr-glint { animation: crk-glint calc(1.7 * var(--t, 1) * 1s) ease-in-out calc(8 * var(--t, 1) * 1s) both; }
+
+  @keyframes crk-glowIn { from { opacity: 0; transform: scale(.7); } }
+  @keyframes crk-rise { from { opacity: 0; transform: translateY(24px) scale(.95); } }
+  @keyframes crk-sheen {
+    0%   { opacity: 0; background-position: 100% 0; }
+    15%  { opacity: 1; }
+    85%  { opacity: 1; }
+    100% { opacity: 0; background-position: 0% 0; }
+  }
+
+  @keyframes crk-openL { 0% { opacity: 0; transform: translateX(-62%); } 40% { opacity: 1; } 100% { opacity: 1; transform: none; } }
+  @keyframes crk-openR { 0% { opacity: 0; transform: translateX(62%); } 40% { opacity: 1; } 100% { opacity: 1; transform: none; } }
+  @keyframes crk-wholeOut { to { opacity: 0; } }
+  @keyframes crk-fl {
+    0.00% { opacity:1.000; transform: perspective(420cqw) translate3d(0.000cqw, -0.000cqw, -0.000cqw) rotateY(-0.00deg) scale(1.00000); filter: brightness(1.000); }
+    4.17% { opacity:1.000; transform: perspective(420cqw) translate3d(-0.003cqw, -0.000cqw, -0.000cqw) rotateY(-0.01deg) scale(1.00000); filter: brightness(1.000); }
+    8.33% { opacity:1.000; transform: perspective(420cqw) translate3d(-0.023cqw, -0.002cqw, -0.000cqw) rotateY(-0.05deg) scale(1.00000); filter: brightness(1.000); }
+    12.50% { opacity:1.000; transform: perspective(420cqw) translate3d(-0.077cqw, -0.006cqw, -0.000cqw) rotateY(-0.18deg) scale(1.00000); filter: brightness(1.000); }
+    16.67% { opacity:1.000; transform: perspective(420cqw) translate3d(-0.182cqw, -0.013cqw, -0.001cqw) rotateY(-0.42deg) scale(1.00000); filter: brightness(0.999); }
+    20.83% { opacity:1.000; transform: perspective(420cqw) translate3d(-0.355cqw, -0.026cqw, -0.005cqw) rotateY(-0.81deg) scale(1.00001); filter: brightness(0.998); }
+    25.00% { opacity:1.000; transform: perspective(420cqw) translate3d(-0.613cqw, -0.044cqw, -0.014cqw) rotateY(-1.41deg) scale(1.00002); filter: brightness(0.997); }
+    29.17% { opacity:1.000; transform: perspective(420cqw) translate3d(-0.974cqw, -0.070cqw, -0.035cqw) rotateY(-2.23deg) scale(1.00006); filter: brightness(0.995); }
+    33.33% { opacity:1.000; transform: perspective(420cqw) translate3d(-1.453cqw, -0.105cqw, -0.078cqw) rotateY(-3.33deg) scale(1.00013); filter: brightness(0.992); }
+    37.50% { opacity:1.000; transform: perspective(420cqw) translate3d(-2.066cqw, -0.149cqw, -0.158cqw) rotateY(-4.75deg) scale(1.00027); filter: brightness(0.988); }
+    41.67% { opacity:1.000; transform: perspective(420cqw) translate3d(-2.830cqw, -0.204cqw, -0.297cqw) rotateY(-6.51deg) scale(1.00050); filter: brightness(0.984); }
+    45.83% { opacity:1.000; transform: perspective(420cqw) translate3d(-3.759cqw, -0.271cqw, -0.525cqw) rotateY(-8.67deg) scale(1.00089); filter: brightness(0.979); }
+    50.00% { opacity:1.000; transform: perspective(420cqw) translate3d(-4.865cqw, -0.351cqw, -0.884cqw) rotateY(-11.25deg) scale(1.00150); filter: brightness(0.973); }
+    54.17% { opacity:1.000; transform: perspective(420cqw) translate3d(-6.157cqw, -0.445cqw, -1.426cqw) rotateY(-14.30deg) scale(1.00243); filter: brightness(0.965); }
+    58.33% { opacity:1.000; transform: perspective(420cqw) translate3d(-7.639cqw, -0.552cqw, -2.218cqw) rotateY(-17.86deg) scale(1.00379); filter: brightness(0.957); }
+    62.50% { opacity:1.000; transform: perspective(420cqw) translate3d(-9.309cqw, -0.673cqw, -3.341cqw) rotateY(-21.97deg) scale(1.00573); filter: brightness(0.948); }
+    66.67% { opacity:1.000; transform: perspective(420cqw) translate3d(-11.155cqw, -0.808cqw, -4.893cqw) rotateY(-26.67deg) scale(1.00842); filter: brightness(0.937); }
+    70.83% { opacity:1.000; transform: perspective(420cqw) translate3d(-13.151cqw, -0.953cqw, -6.984cqw) rotateY(-31.99deg) scale(1.01206); filter: brightness(0.926); }
+    75.00% { opacity:1.000; transform: perspective(420cqw) translate3d(-15.254cqw, -1.107cqw, -9.736cqw) rotateY(-37.97deg) scale(1.01687); filter: brightness(0.914); }
+    79.17% { opacity:0.955; transform: perspective(420cqw) translate3d(-17.401cqw, -1.265cqw, -13.278cqw) rotateY(-44.65deg) scale(1.02306); filter: brightness(0.902); }
+    83.33% { opacity:0.765; transform: perspective(420cqw) translate3d(-19.499cqw, -1.420cqw, -17.732cqw) rotateY(-52.08deg) scale(1.03085); filter: brightness(0.890); }
+    87.50% { opacity:0.466; transform: perspective(420cqw) translate3d(-21.426cqw, -1.563cqw, -23.204cqw) rotateY(-60.29deg) scale(1.04040); filter: brightness(0.878); }
+    91.67% { opacity:0.156; transform: perspective(420cqw) translate3d(-23.025cqw, -1.684cqw, -29.757cqw) rotateY(-69.32deg) scale(1.05180); filter: brightness(0.869); }
+    95.83% { opacity:0.000; transform: perspective(420cqw) translate3d(-24.106cqw, -1.768cqw, -37.390cqw) rotateY(-79.21deg) scale(1.06497); filter: brightness(0.862); }
+    100.00% { opacity:0.000; transform: perspective(420cqw) translate3d(-24.449cqw, -1.800cqw, -46.000cqw) rotateY(-90.00deg) scale(1.07968); filter: brightness(0.860); }
+  }
+  @keyframes crk-fr {
+    0.00% { opacity:1.000; transform: perspective(420cqw) translate3d(0.000cqw, -0.000cqw, -0.000cqw) rotateY(0.00deg) scale(1.00000); filter: brightness(1.000); }
+    4.17% { opacity:1.000; transform: perspective(420cqw) translate3d(0.003cqw, -0.000cqw, -0.000cqw) rotateY(0.01deg) scale(1.00000); filter: brightness(1.000); }
+    8.33% { opacity:1.000; transform: perspective(420cqw) translate3d(0.023cqw, -0.002cqw, -0.000cqw) rotateY(0.05deg) scale(1.00000); filter: brightness(1.000); }
+    12.50% { opacity:1.000; transform: perspective(420cqw) translate3d(0.077cqw, -0.006cqw, -0.000cqw) rotateY(0.18deg) scale(1.00000); filter: brightness(1.000); }
+    16.67% { opacity:1.000; transform: perspective(420cqw) translate3d(0.182cqw, -0.013cqw, -0.001cqw) rotateY(0.42deg) scale(1.00000); filter: brightness(0.999); }
+    20.83% { opacity:1.000; transform: perspective(420cqw) translate3d(0.355cqw, -0.026cqw, -0.005cqw) rotateY(0.81deg) scale(1.00001); filter: brightness(0.998); }
+    25.00% { opacity:1.000; transform: perspective(420cqw) translate3d(0.613cqw, -0.044cqw, -0.014cqw) rotateY(1.41deg) scale(1.00002); filter: brightness(0.997); }
+    29.17% { opacity:1.000; transform: perspective(420cqw) translate3d(0.974cqw, -0.070cqw, -0.035cqw) rotateY(2.23deg) scale(1.00006); filter: brightness(0.995); }
+    33.33% { opacity:1.000; transform: perspective(420cqw) translate3d(1.453cqw, -0.105cqw, -0.078cqw) rotateY(3.33deg) scale(1.00013); filter: brightness(0.992); }
+    37.50% { opacity:1.000; transform: perspective(420cqw) translate3d(2.066cqw, -0.149cqw, -0.158cqw) rotateY(4.75deg) scale(1.00027); filter: brightness(0.988); }
+    41.67% { opacity:1.000; transform: perspective(420cqw) translate3d(2.830cqw, -0.204cqw, -0.297cqw) rotateY(6.51deg) scale(1.00050); filter: brightness(0.984); }
+    45.83% { opacity:1.000; transform: perspective(420cqw) translate3d(3.759cqw, -0.271cqw, -0.525cqw) rotateY(8.67deg) scale(1.00089); filter: brightness(0.979); }
+    50.00% { opacity:1.000; transform: perspective(420cqw) translate3d(4.865cqw, -0.351cqw, -0.884cqw) rotateY(11.25deg) scale(1.00150); filter: brightness(0.973); }
+    54.17% { opacity:1.000; transform: perspective(420cqw) translate3d(6.157cqw, -0.445cqw, -1.426cqw) rotateY(14.30deg) scale(1.00243); filter: brightness(0.965); }
+    58.33% { opacity:1.000; transform: perspective(420cqw) translate3d(7.639cqw, -0.552cqw, -2.218cqw) rotateY(17.86deg) scale(1.00379); filter: brightness(0.957); }
+    62.50% { opacity:1.000; transform: perspective(420cqw) translate3d(9.309cqw, -0.673cqw, -3.341cqw) rotateY(21.97deg) scale(1.00573); filter: brightness(0.948); }
+    66.67% { opacity:1.000; transform: perspective(420cqw) translate3d(11.155cqw, -0.808cqw, -4.893cqw) rotateY(26.67deg) scale(1.00842); filter: brightness(0.937); }
+    70.83% { opacity:1.000; transform: perspective(420cqw) translate3d(13.151cqw, -0.953cqw, -6.984cqw) rotateY(31.99deg) scale(1.01206); filter: brightness(0.926); }
+    75.00% { opacity:1.000; transform: perspective(420cqw) translate3d(15.254cqw, -1.107cqw, -9.736cqw) rotateY(37.97deg) scale(1.01687); filter: brightness(0.914); }
+    79.17% { opacity:0.955; transform: perspective(420cqw) translate3d(17.401cqw, -1.265cqw, -13.278cqw) rotateY(44.65deg) scale(1.02306); filter: brightness(0.902); }
+    83.33% { opacity:0.765; transform: perspective(420cqw) translate3d(19.499cqw, -1.420cqw, -17.732cqw) rotateY(52.08deg) scale(1.03085); filter: brightness(0.890); }
+    87.50% { opacity:0.466; transform: perspective(420cqw) translate3d(21.426cqw, -1.563cqw, -23.204cqw) rotateY(60.29deg) scale(1.04040); filter: brightness(0.878); }
+    91.67% { opacity:0.156; transform: perspective(420cqw) translate3d(23.025cqw, -1.684cqw, -29.757cqw) rotateY(69.32deg) scale(1.05180); filter: brightness(0.869); }
+    95.83% { opacity:0.000; transform: perspective(420cqw) translate3d(24.106cqw, -1.768cqw, -37.390cqw) rotateY(79.21deg) scale(1.06497); filter: brightness(0.862); }
+    100.00% { opacity:0.000; transform: perspective(420cqw) translate3d(24.449cqw, -1.800cqw, -46.000cqw) rotateY(90.00deg) scale(1.07968); filter: brightness(0.860); }
+  }
+  @keyframes crk-swayL { 0%, 100% { rotate: 0deg; } 50% { rotate: .4deg; } }
+  @keyframes crk-swayR { 0%, 100% { rotate: 0deg; } 50% { rotate: -.4deg; } }
+
+  /* ---- signature: every letter its own way, all together ---- */
+  @keyframes crk-lettersOut { from { opacity: 1; } to { opacity: 0; } }
+  @keyframes crk-fullIn { from { opacity: 0; } }
+  @keyframes crk-aS { /* drawn diagonally, like a pen stroke */
+    from { opacity: 0; clip-path: polygon(0 100%, 0 100%, 0 100%, 0 100%); transform: rotate(-14deg) translateY(16%); filter: blur(5px) brightness(2); }
+    30%  { opacity: 1; }
+    to   { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); }
+  }
+  @keyframes crk-aI { /* drawn top to bottom */
+    from { opacity: 0; clip-path: inset(0 0 100% 0); filter: brightness(2.2); }
+    20%  { opacity: 1; }
+    to   { clip-path: inset(0 0 0 0); }
+  }
+  @keyframes crk-aG { /* spins in from small */
+    from { opacity: 0; transform: scale(.3) rotate(-75deg); filter: blur(10px) brightness(2); }
+    45%  { opacity: 1; }
+  }
+  @keyframes crk-aN { /* slides in from the left, skewed */
+    from { opacity: 0; transform: translateX(-70%) skewX(-24deg); filter: blur(8px) brightness(1.8); }
+    40%  { opacity: 1; }
+  }
+  @keyframes crk-aA { /* rises up out of the dark, large to small */
+    from { opacity: 0; transform: translateY(70%) scale(1.3); filter: blur(10px) brightness(2); }
+    40%  { opacity: 1; }
+  }
+  @keyframes crk-aT { /* drops from above and settles */
+    from { opacity: 0; transform: translateY(-80%) rotate(9deg); filter: blur(6px) brightness(2); }
+    35%  { opacity: 1; }
+  }
+  @keyframes crk-aU { /* slides in from the right, skewed */
+    from { opacity: 0; transform: translateX(70%) skewX(24deg); filter: blur(8px) brightness(1.8); }
+    40%  { opacity: 1; }
+  }
+  @keyframes crk-aR { /* tumbles in */
+    from { opacity: 0; transform: rotate(30deg) scale(.4) translateY(40%); filter: blur(10px) brightness(2); }
+    45%  { opacity: 1; }
+  }
+  @keyframes crk-aE { /* drawn right to left */
+    from { opacity: 0; clip-path: inset(0 0 0 100%); transform: translateX(30%); filter: brightness(2.2); }
+    25%  { opacity: 1; }
+    to   { clip-path: inset(0 0 0 0); }
+  }
+
+  @keyframes crk-storiesIn {
+    from { opacity: 0; clip-path: inset(-20% 50% -20% 50%); transform: translateY(8px) scale(.97); filter: blur(5px); }
+    45%  { opacity: 1; }
+    to   { clip-path: inset(-20% -6% -20% -6%); }
+  }
+  @keyframes crk-extIn { from { opacity: 0; transform: scaleX(0); } }
+  @keyframes crk-lower {
+    from { transform: translateY(-104%); }
+    62%  { transform: translateY(3.5%); }
+    80%  { transform: translateY(-1.2%); }
+    to   { transform: translateY(0); }
+  }
+  @keyframes crk-pendulum {
+    0%   { rotate: 0deg; }
+    14%  { rotate: 3.6deg; }
+    32%  { rotate: -2.8deg; }
+    50%  { rotate: 1.8deg; }
+    66%  { rotate: -1deg; }
+    82%  { rotate: .45deg; }
+    100% { rotate: 0deg; }
+  }
+  @keyframes crk-burst {
+    0%   { opacity: 0; width: 2%; }
+    15%  { opacity: .9; }
+    100% { opacity: 0; width: 9%; }
+  }
+  @keyframes crk-glint {
+    0%   { opacity: 0; background-position: 100% 0; }
+    12%  { opacity: .9; }
+    88%  { opacity: .9; }
+    100% { opacity: 0; background-position: 0% 0; }
+  }
+  @keyframes crk-twinkle {
+    0%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(.2) rotate(0deg); }
+    50%      { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(25deg); }
+  }
+  @keyframes crk-drift {
+    0%   { opacity: 0; transform: translateY(0); }
+    15%  { opacity: .9; }
+    100% { opacity: 0; transform: translateY(-110px); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cr-stage, .cr-stage * { animation: none !important; }
+    .cr-closed-wrap, .cr-spark, .cr-dust, .cr-glint, .cr-burst, .cr-sheen { display: none; }
+  }
