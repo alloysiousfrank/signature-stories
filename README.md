@@ -1,16 +1,24 @@
-# React + Vite
+# Signature Stories
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Marketing site for Signature Stories Event Planner. React 19 + Vite, hash-routed (`#/home`, `#/about`, `#/services`, `#/gallery`, `#/contact`).
 
-Currently, two official plugins are available:
+## Run
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+npm install
+npm run dev       # local dev server
+npm run lint
+npm run build     # production build into dist/
+npm run preview   # serve dist/ locally
+```
 
-## React Compiler
+The site is fully static: upload `dist/` to any static host.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Intro animation
 
-## Expanding the Oxlint configuration
+`App.jsx` plays the logo intro on first load and, in a faster form, when the visitor moves between pages.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+- `IntroReveal.jsx` + `introReveal.css` hold the artwork and its timeline: the full curtain splits, each half loops out to its side, SIGNATURE animates in, the tied-back curtain closes behind it, STORIES fades in and the heart settles above the A. Images are in `public/assests/curtain/` (the folder name `assests` is historical; keep it, paths depend on it).
+- `App.css` holds the intro stage (beige background, replay glass blur) and `logoFlight`, the glide of the finished logo up to the navbar. The flight starts at 9.3 s (`animation-delay` on `.intro-logo`); `FLIGHT_START_S` in `App.jsx` must match.
+- Every time value in `introReveal.css` is multiplied by `--t`. It is 1 on first load and a fraction on replays (set in `App.jsx`), so a replay plays the same sequence compressed.
+- Reduced-motion visitors skip the intro entirely.

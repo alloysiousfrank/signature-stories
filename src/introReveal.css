@@ -315,3 +315,9 @@
     .cr-stage, .cr-stage * { animation: none !important; }
     .cr-closed-wrap, .cr-spark, .cr-dust, .cr-glint, .cr-burst, .cr-sheen { display: none; }
   }
+
+/* Browsers without container query units cannot run the curtain loop; skip the split halves
+   (the full curtain still fades out and the rest of the reveal plays normally). */
+@supports not (width: 1cqw) {
+  .cr-hf { display: none; }
+}
