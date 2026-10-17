@@ -194,8 +194,8 @@ a {
 
 .brand-logo {
   display: block;
-  width: 80px;    /* logo art is a tight crop, aspect 1.79; navbar logo shown at 50% */
-  height: 45px;
+  width: 100px;   /* logo art is a tight crop, aspect 1.79 */
+  height: 56px;
   object-fit: contain;
 }
 
@@ -574,8 +574,8 @@ a {
 
   /* Bigger intro-style logo on mobile (per request, +25%) */
   .brand-logo {
-    width: 78px;
-    height: 44px;
+    width: 98px;
+    height: 55px;
   }
 
   /* Desktop inline links become the slide-down drawer */
@@ -630,8 +630,8 @@ a {
 
 @media (max-width: 400px) {
   .brand-logo {
-    width: 65px;
-    height: 36px;
+    width: 81px;
+    height: 45px;
   }
 
   .intro-logo {
