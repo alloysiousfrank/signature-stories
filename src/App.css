@@ -57,42 +57,7 @@ a {
      1:1 to the reference image the user provided. */
   aspect-ratio: 1565 / 1005;
   transform-origin: center center;
-  animation: logoFlight 1s cubic-bezier(.65, 0, .25, 1) 9.3s forwards;
-}
-
-/* Replay between pages = the SAME element-by-element choreography as the
-   first load, compressed proportionally so it reads as a fast loading
-   reveal, never a frozen logo. --r is the time unit (replayMs / 5.2). */
-.intro-quick .intro-logo {
-  animation: logoFlight 0.9s cubic-bezier(.65, 0, .25, 1) calc(4.2 * var(--r) * 1s) forwards;
-}
-
-/* The artwork timeline is scaled by --t (set in App.jsx) so replays compress the
-   same choreography the same way the old per-layer delays did. */
-
-/* Gentle breathing on the canopy hold, so the reveal reads as "loading"
-   and not "stuck". Uses `scale` so it composes with each layer's own
-   translate() instead of clobbering it. */
-.intro-quick .cr-open-frame {
-  animation: replayBreathe calc(var(--replay-ms) + 1400ms) ease-in-out 0s infinite;
-}
-
-@keyframes replayBreathe {
-  0%, 100% { scale: 1; }
-  50%      { scale: 1.02; }
-}
-
-.intro-skip-hint {
-  position: absolute;
-  bottom: max(28px, 4.5vh);
-  left: 50%;
-  transform: translateX(-50%);
-  font-family: Arial, Helvetica, sans-serif;
-  font-size: 12px;
-  letter-spacing: .12em;
-  color: rgba(139, 111, 51, .8);
-  animation: skipHintFade .5s ease 1.2s both;
-  pointer-events: none;
+  animation: logoFlight 1s cubic-bezier(.65, 0, .25, 1) calc(9.3 * var(--t, 1) * 1s) forwards;
 }
 
 /* While assets preload, freeze every intro animation at its start pose
@@ -104,8 +69,8 @@ a {
 }
 
 /* The intro artwork (curtain, lettering, heart) lives in IntroReveal.jsx /
-   introReveal.css and fills this 1565x1005 logo box 1:1 with the reference
-   mark, so everything below (stage, glass, flight to the navbar) is unchanged. */
+   introReveal.css and fills this 1565x1005 logo box. --t (set in App.jsx) is the
+   intro speed: every time value of the artwork and the flight start scale with it. */
 
 /* Transition toward the navbar once the logo is complete. */
 
@@ -116,30 +81,6 @@ a {
       scale(.18);
     opacity: 0;
   }
-}
-
-/* Glass blur behind the intro when it REPLAYS on page navigation:
-   the incoming page shows through a frosted layer. On the very first
-   load (`.intro-glass` absent) the intro keeps its solid beige stage. */
-/* Replay stage: NO beige paint at all — the incoming page shows fully
-   through a frosted glass blur, contents visible behind the intro. */
-.intro-screen.intro-glass {
-  background: rgba(245, 240, 223, .14);
-  -webkit-backdrop-filter: blur(26px) saturate(1.15);
-  backdrop-filter: blur(26px) saturate(1.15);
-}
-
-/* During a replay the incoming page sits behind the frosted stage:
-   visible (not yet animated in) so the blur has real content. */
-.site-shell.replaying {
-  visibility: visible;
-  opacity: 1;
-  animation: none;
-}
-
-@keyframes skipHintFade {
-  from { opacity: 0; }
-  to { opacity: 1; }
 }
 
 .site-shell {

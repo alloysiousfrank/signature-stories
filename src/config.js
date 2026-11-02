@@ -4,7 +4,6 @@
 // Contact channels. Fill in to enable the matching button on the Contact page.
 export const WHATSAPP_NUMBER = "";      // digits only with country code, e.g. "919876543210"
 export const CONTACT_EMAIL = "";        // e.g. "hello@signaturestories.in"
-export const FORM_ENDPOINT = "";        // e.g. a Formspree URL "https://formspree.io/f/xxxxxxx"
 
 // While true, the sample testimonials and numbers below are shown so the
 // layout can be reviewed. Set to false (or fill REAL_* below) before launch.

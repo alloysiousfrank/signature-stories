@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { CONTACT_EMAIL, FORM_ENDPOINT, SOCIALS, WHATSAPP_NUMBER } from "./config.js";
+import { publicApi } from "./api.js";
+import { CONTACT_EMAIL, SOCIALS, WHATSAPP_NUMBER } from "./config.js";
 import { EVENT_TYPES, GALLERY, IMAGES, SERVICES } from "./content.js";
 import {
   CtaBand,
@@ -173,16 +174,21 @@ function buildSummary(f) {
     `Email: ${f.email}`,
     f.phone ? `Phone: ${f.phone}` : null,
     `Event: ${f.type}`,
+    f.pkg ? `Package: ${f.pkg}` : null,
     f.date ? `Date: ${f.date}` : null,
     `Guests: about ${f.guests}`,
   ].filter(Boolean);
   return `${lines.join("\n")}\n\n${f.message}`;
 }
 
-function ContactForm() {
+function ContactForm({ query }) {
+  const wanted = query?.get("event");
   const [form, setForm] = useState({
-    name: "", email: "", phone: "", type: EVENT_TYPES[0], date: "", guests: 100, message: "",
+    name: "", email: "", phone: "", date: "", guests: 100, message: "", website: "",
+    type: EVENT_TYPES.includes(wanted) ? wanted : EVENT_TYPES[0],
+    pkg: query?.get("package") || "",
   });
+  const [errMsg, setErrMsg] = useState("");
   const [status, setStatus] = useState("idle"); // idle | sending | sent | error | manual
   const [copied, setCopied] = useState(false);
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -202,17 +208,17 @@ function ContactForm() {
 
   const submit = async (e) => {
     e.preventDefault();
-    if (!FORM_ENDPOINT) { setStatus("manual"); return; }
-    setStatus("sending");
+    setStatus("sending"); setErrMsg("");
     try {
-      const res = await fetch(FORM_ENDPOINT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ ...form, summary }),
+      await publicApi.submitInquiry({
+        name: form.name, email: form.email, phone: form.phone, eventType: form.type,
+        eventDate: form.date, guests: Number(form.guests), packageName: form.pkg,
+        message: form.message, website: form.website,
       });
-      setStatus(res.ok ? "sent" : "error");
-    } catch {
-      setStatus("error");
+      setStatus("sent");
+    } catch (err) {
+      if (err.status === 0) setStatus("manual"); // server unreachable: let them send it another way
+      else { setErrMsg(err.message); setStatus("error"); }
     }
   };
 
@@ -272,6 +278,15 @@ function ContactForm() {
         </div>
       </fieldset>
 
+      {form.pkg && (
+        <p className="pkg-note">
+          Enquiring about the <strong>{form.pkg}</strong> package
+          <button type="button" onClick={() => setForm((f) => ({ ...f, pkg: "" }))} aria-label="Remove package">×</button>
+        </p>
+      )}
+      <input type="text" name="website" className="hp-field" tabIndex={-1} autoComplete="off" aria-hidden="true"
+        value={form.website} onChange={set("website")} />
+
       <div className="form-row">
         <input type="text" name="name" placeholder="Your name" required autoComplete="name" value={form.name} onChange={set("name")} />
         <input type="email" name="email" placeholder="Email address" required autoComplete="email" value={form.email} onChange={set("email")} />
@@ -304,14 +319,14 @@ function ContactForm() {
       </button>
       {status === "error" && (
         <p className="form-error" role="alert">
-          That did not go through. Please try again{waHref ? " or message us on WhatsApp" : ""}.
+          {errMsg || "That did not go through."} Please try again{waHref ? " or message us on WhatsApp" : ""}.
         </p>
       )}
     </form>
   );
 }
 
-export function Contact() {
+export function Contact({ query }) {
   return (
     <section className="page-head glass-card contact-page" data-reveal>
       <p className="eyebrow">CONTACT</p>
@@ -320,7 +335,7 @@ export function Contact() {
         Tell us about your occasion — dates, guest count, the feeling you're
         after — and we'll take it from there.
       </p>
-      <ContactForm />
+      <ContactForm query={query} />
       {SOCIALS.length > 0 && (
         <p className="socials">
           {SOCIALS.map((s) => (

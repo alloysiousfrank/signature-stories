@@ -2,7 +2,7 @@
    Signature Stories — luxury layer
    Loaded AFTER App.css. Purely additive: it never touches the intro
    (.intro-*, .logo-layer, .canopy-*, .signature-word, .stories-word,
-   .hanging-heart, logoFlight, replay rules) or the site-shell reveal.
+   .hanging-heart, logoFlight) or the site-shell reveal.
    ================================================================== */
 
 :root {

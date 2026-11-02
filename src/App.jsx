@@ -1,10 +1,19 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import "./App.css";
 import IntroReveal from "./IntroReveal.jsx";
 import { REVEAL_IMAGES } from "./introImages.js";
 import "./luxury.css";
+import "./glass.css";
+import { EventDetail, Events } from "./events.jsx";
 import { About, Contact, Gallery, Home, Services } from "./pages.jsx";
 import { LuxuryLayer } from "./ui.jsx";
+
+const Admin = lazy(() => import("./admin/Admin.jsx"));
+
+/* Intro timing. The artwork's whole timeline is scaled by INTRO_SPEED
+   (1 = original ≈10.3s; 0.7 ≈ 7.2s), so every beat stays in proportion. */
+const INTRO_SPEED = 0.7;
+const INTRO_PLAY_MS = 10500 * INTRO_SPEED; // choreography incl. flight to the navbar
 
 /* Preload every intro asset before the first animation frame so nothing
    stutters or freezes while the choreography plays. */
@@ -28,29 +37,33 @@ function useIntroPreload() {
   return ready;
 }
 
-const PAGES = ["home", "about", "services", "gallery", "contact"];
+const PAGES = ["home", "about", "services", "events", "gallery", "contact"];
+
+function parseHash() {
+  const raw = window.location.hash.replace(/^#\/?/, "");
+  const [path, qs = ""] = raw.split("?");
+  const [page, param = ""] = path.split("/");
+  const known = [...PAGES, "admin"];
+  return { page: known.includes(page) ? page : "home", param, query: new URLSearchParams(qs) };
+}
 
 function useHashRoute() {
-  const [page, setPage] = useState(() => {
-    const h = window.location.hash.replace("#/", "");
-    return PAGES.includes(h) ? h : "home";
-  });
-
+  const [route, setRoute] = useState(parseHash);
   useEffect(() => {
     const onHash = () => {
-      const h = window.location.hash.replace("#/", "");
-      if (PAGES.includes(h)) setPage(h);
+      setRoute(parseHash());
       window.scrollTo({ top: 0, behavior: "instant" });
     };
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
-
-  return page;
+  return route;
 }
 
-/* Fades + lifts every [data-reveal] child when it scrolls into view. */
-function useScrollReveal(page) {
+/* Fades + lifts [data-reveal] blocks as they scroll into view. Blocks that
+   are already on screen when a page opens appear at once — navigating
+   between pages has no animation of its own. */
+function useScrollReveal(key) {
   useEffect(() => {
     const els = document.querySelectorAll("[data-reveal]");
     const io = new IntersectionObserver(
@@ -62,77 +75,44 @@ function useScrollReveal(page) {
           }
         }
       },
-      { threshold: 0.18 }
+      { threshold: 0.12 }
     );
     els.forEach((el) => {
       el.classList.remove("is-revealed");
-      io.observe(el);
+      if (el.getBoundingClientRect().top < window.innerHeight) {
+        el.classList.add("is-revealed", "is-instant");
+      } else {
+        el.classList.remove("is-instant");
+        io.observe(el);
+      }
     });
     return () => io.disconnect();
-  }, [page]);
+  }, [key]);
 }
 
-/* Replays are a LOADING slide, not the full choreography: the finished
-   logo appears at once and glides to the navbar. Duration follows the
-   visitor's connection (Network Information API) so it reads as loading
-   on slow links but never drags on fast ones — and is never "too fast". */
-function estimateReplayMs() {
-  const c = typeof navigator !== "undefined"
-    ? (navigator.connection || navigator.mozConnection || navigator.webkitConnection)
-    : null;
-  let ms;
-  switch (c && c.effectiveType) {
-    case "slow-2g":
-    case "2g": ms = 2200; break;
-    case "3g": ms = 1800; break;
-    case "4g": ms = 1400; break;
-    default: ms = 1200; break;
-  }
-  if (c && c.saveData) ms = Math.max(ms, 2000);
-  return Math.min(Math.max(ms, 900), 2400);
-}
-
-function Intro({ replay, replayMs, onComplete }) {
+function Intro({ onComplete }) {
   const ready = useIntroPreload();
 
   // Safety net: if the tab was hidden while the intro ran (browser
   // throttles CSS animations for background tabs), animationend never
   // fires — so force completion just after the choreography should end.
-  // animationend usually lands first; this only ever runs as a fallback.
   const done = useRef(false);
   const complete = useCallback(() => {
     if (!done.current) { done.current = true; onComplete(); }
   }, [onComplete]);
 
   useEffect(() => {
-    const limit = replay ? replayMs + 800 : INTRO_PLAY_MS + 600;
-    const kill = setTimeout(complete, limit);
+    const kill = setTimeout(complete, INTRO_PLAY_MS + 600);
     return () => clearTimeout(kill);
-  }, [complete, replay, replayMs]);
+  }, [complete]);
 
   return (
-    <div
-      className={`intro-screen ${replay ? "intro-glass intro-quick" : ""}`}
-      onClick={replay ? complete : undefined}
-      role={replay ? "button" : undefined}
-      aria-label={replay ? "Skip intro" : undefined}
-    >
-      {replay && <span className="intro-skip-hint">Tap to skip</span>}
+    <div className="intro-screen">
       <div
-        style={{
-          "--replay-ms": `${replayMs}ms`,
-          "--r": `${(replayMs / 5200).toFixed(4)}`,
-          // artwork time scale: 1 on first load; on replays the flight still starts at 4.2 * --r
-          "--t": replay ? ((replayMs / 5200) * (4.2 / FLIGHT_START_S)).toFixed(4) : "1",
-        }}
+        style={{ "--t": INTRO_SPEED }}
         className={ready ? "intro-logo" : "intro-logo intro-paused"}
         onAnimationEnd={(event) => {
-          if (
-            event.target === event.currentTarget &&
-            event.animationName === "logoFlight"
-          ) {
-            complete();
-          }
+          if (event.target === event.currentTarget && event.animationName === "logoFlight") complete();
         }}
       >
         <IntroReveal />
@@ -208,47 +188,36 @@ function Footer() {
 
 /* ------------------------------------------------------------------ */
 
-const FLIGHT_START_S = 9.3; // keep in sync with .intro-logo animation-delay in App.css
-const INTRO_PLAY_MS = 10500; // full intro choreography incl. flight to navbar
-
 export default function App() {
-  const page = useHashRoute();
-  const [introDone, setIntroDone] = useState(false);
+  const { page, param, query } = useHashRoute();
+  const isAdmin = page === "admin";
+  // The intro plays once per visit, on first load only, and never for the admin panel.
+  const [introDone, setIntroDone] = useState(isAdmin);
   const go = (p) => { window.location.hash = `#/${p}`; };
 
-  // When the hash route changes after intro has completed, replay the intro.
-  // On replays the intro stage shows the incoming page through a frosted
-  // glass blur; only the very first load keeps the solid beige background.
-  const firstRun = useRef(true);
-  useEffect(() => {
-    if (firstRun.current) { firstRun.current = false; return; }
-    setReplayMs(estimateReplayMs());
-    setIntroReplay(true);
-    setIntroDone(false);
-  }, [page]);
-  const [introReplay, setIntroReplay] = useState(false);
-  const [replayMs, setReplayMs] = useState(() => estimateReplayMs());
+  useScrollReveal(`${page}/${param}`);
 
-  useScrollReveal(page);
+  if (isAdmin) {
+    return (
+      <Suspense fallback={null}>
+        <Admin sub={param || "dashboard"} />
+      </Suspense>
+    );
+  }
 
   return (
     <>
-      {!introDone && (
-        <Intro
-          replay={introReplay}
-          replayMs={replayMs}
-          onComplete={() => { setIntroDone(true); setIntroReplay(false); }}
-        />
-      )}
+      {!introDone && <Intro onComplete={() => setIntroDone(true)} />}
 
-      <div className={`site-shell ${introDone ? "site-ready" : ""} ${introReplay ? "replaying" : ""}`}>
+      <div className={`site-shell ${introDone ? "site-ready" : ""}`}>
         <Navbar page={page} go={go} />
         <main className="website-content" data-page={page}>
           {page === "home" && <Home />}
           {page === "about" && <About />}
           {page === "services" && <Services />}
+          {page === "events" && (param ? <EventDetail slug={param} /> : <Events />)}
           {page === "gallery" && <Gallery />}
-          {page === "contact" && <Contact />}
+          {page === "contact" && <Contact key={query.toString()} query={query} />}
         </main>
         <Footer />
         <LuxuryLayer />

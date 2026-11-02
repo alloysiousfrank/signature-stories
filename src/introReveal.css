@@ -1,7 +1,7 @@
 /* Intro reveal artwork: full curtain splits and loops back, SIGNATURE / STORIES / heart animate in,
    tied-back curtain closes behind them. Lives inside .intro-logo, so the background, the intro
    stage and the flight to the navbar are untouched (see App.css).
-   --t scales every time value: 1 on first load, a fraction on replays (set in App.jsx). */
+   --t scales every time value: set in App.jsx via INTRO_SPEED (0.7 = about 30% faster than the original 1.0 timeline). */
 .cr-stage {
     --beige: #d0cbb0;
     --gold: #b99a55;

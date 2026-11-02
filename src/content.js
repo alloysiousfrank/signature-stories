@@ -112,4 +112,4 @@ export const FAQS = [
   { q: "How does pricing work?", a: "Every event is quoted individually based on date, guest count, venue and scope. Share a few details through the enquiry form and we will send a clear, itemised proposal." },
 ];
 
-export const EVENT_TYPES = ["Wedding", "Engagement", "Birthday", "Anniversary", "Corporate", "Other"];
+export const EVENT_TYPES = ["Wedding", "Engagement", "Birthday", "Anniversary", "Corporate", "Baby Shower", "Festive", "Other"];

@@ -351,13 +351,13 @@ export function Packages() {
 /* FAQ accordion                                                       */
 /* ------------------------------------------------------------------ */
 
-export function Faq() {
+export function Faq({ items = FAQS, id = "faq" }) {
   const [open, setOpen] = useState(0);
   return (
     <section className="faq">
       <SectionHead eyebrow="GOOD TO KNOW" title="Questions, answered." />
       <div className="faq-list" data-reveal>
-        {FAQS.map((f, i) => {
+        {items.map((f, i) => {
           const isOpen = open === i;
           return (
             <div className={`faq-item ${isOpen ? "is-open" : ""}`} key={f.q}>
@@ -365,15 +365,15 @@ export function Faq() {
                 <button
                   type="button"
                   aria-expanded={isOpen}
-                  aria-controls={`faq-panel-${i}`}
-                  id={`faq-btn-${i}`}
+                  aria-controls={`${id}-panel-${i}`}
+                  id={`${id}-btn-${i}`}
                   onClick={() => setOpen(isOpen ? -1 : i)}
                 >
                   <span>{f.q}</span>
                   <i aria-hidden="true" />
                 </button>
               </h3>
-              <div className="faq-panel" id={`faq-panel-${i}`} role="region" aria-labelledby={`faq-btn-${i}`}>
+              <div className="faq-panel" id={`${id}-panel-${i}`} role="region" aria-labelledby={`${id}-btn-${i}`}>
                 <p>{f.a}</p>
               </div>
             </div>

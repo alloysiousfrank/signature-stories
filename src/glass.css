@@ -1,0 +1,166 @@
+/* ------------------------------------------------------------------
+   Rich glass layer — loaded last. Same ivory / beige / champagne
+   palette as before, with deeper contrast, frosted panels, a slow
+   aurora backdrop and gold shimmer details.
+   ------------------------------------------------------------------ */
+:root {
+  --gold-1: #f3dc9a;
+  --gold-2: #b99a55;
+  --gold-3: #8b6f33;
+  --ink: #1d1a14;
+  --glass-bg: linear-gradient(145deg, rgba(255,253,247,.62), rgba(245,240,223,.34) 55%, rgba(185,154,85,.20));
+  --glass-edge: rgba(255,255,255,.55);
+}
+
+body {
+  background:
+    radial-gradient(60vmax 45vmax at 12% 8%, rgba(243,220,154,.55), transparent 62%),
+    radial-gradient(55vmax 45vmax at 92% 22%, rgba(208,203,176,.75), transparent 60%),
+    radial-gradient(60vmax 50vmax at 50% 105%, rgba(185,154,85,.35), transparent 60%),
+    linear-gradient(180deg, #fbf6e8, #efe8d0);
+  background-attachment: fixed;
+}
+
+/* slow-drifting light behind everything (decorative, off for reduced motion) */
+body::before {
+  content: "";
+  position: fixed;
+  inset: -20%;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(28vmax 28vmax at 25% 30%, rgba(243,220,154,.35), transparent 70%),
+    radial-gradient(24vmax 24vmax at 75% 70%, rgba(255,253,247,.55), transparent 70%);
+  animation: auroraDrift 26s ease-in-out infinite alternate;
+}
+@keyframes auroraDrift {
+  from { transform: translate3d(-3%, -2%, 0) scale(1); }
+  to   { transform: translate3d(3%, 3%, 0) scale(1.08); }
+}
+
+h1, h2, h3, .event-card strong, .package h3 { font-family: "Cormorant Garamond", Georgia, serif; letter-spacing: .01em; }
+
+.glass-card, .navbar {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-edge);
+  -webkit-backdrop-filter: blur(22px) saturate(1.5);
+  backdrop-filter: blur(22px) saturate(1.5);
+  box-shadow:
+    0 18px 50px rgba(36,32,25,.10),
+    0 2px 0 rgba(185,154,85,.18),
+    inset 0 1px 0 rgba(255,255,255,.8),
+    inset 0 -1px 0 rgba(185,154,85,.18);
+}
+.glass-card { position: relative; overflow: hidden; }
+.glass-card::after {           /* light sweep on hover */
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,.55) 50%, transparent 65%);
+  transform: translateX(-120%);
+  transition: transform .9s ease;
+  pointer-events: none;
+}
+.glass-card:hover::after { transform: translateX(120%); }
+
+.contact-link, .nav-book, .adm-btn {
+  background: linear-gradient(135deg, var(--gold-1), var(--gold-2) 45%, var(--gold-3));
+  color: var(--ink);
+  border: 1px solid rgba(255,255,255,.5);
+  box-shadow: 0 8px 22px rgba(139,111,51,.35), inset 0 1px 0 rgba(255,255,255,.6);
+  position: relative;
+  overflow: hidden;
+}
+.contact-link::after, .nav-book::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,.65) 50%, transparent 70%);
+  transform: translateX(-130%);
+  transition: transform .7s ease;
+}
+.contact-link:hover::after, .nav-book:hover::after { transform: translateX(130%); }
+
+.ghost-link {
+  background: rgba(255,253,247,.35);
+  border: 1px solid rgba(185,154,85,.55);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.band-dark {
+  background:
+    radial-gradient(60% 120% at 20% 0%, rgba(185,154,85,.28), transparent 60%),
+    linear-gradient(135deg, #2a251b, #1a1710);
+  border: 1px solid rgba(243,220,154,.25);
+  box-shadow: 0 22px 60px rgba(29,26,20,.35), inset 0 1px 0 rgba(243,220,154,.25);
+}
+
+/* Navigation fits six links */
+.navbar nav { gap: clamp(10px, 1.4vw, 24px); }
+@media (max-width: 1100px) and (min-width: 861px) { .navbar nav a { font-size: .86rem; } }
+
+/* page navigation has no animation of its own */
+[data-reveal].is-instant { transition: none; }
+
+/* ---- forms ---- */
+.hp-field { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+.pkg-note {
+  display: inline-flex; align-items: center; gap: .6rem; margin: 0 0 .8rem;
+  padding: .45rem .9rem; border-radius: 999px;
+  background: rgba(185,154,85,.18); border: 1px solid rgba(185,154,85,.45); font-size: .9rem;
+}
+.pkg-note button { border: 0; background: none; cursor: pointer; font-size: 1.1rem; color: var(--gold-3); }
+
+/* ---- events ---- */
+.event-grid {
+  display: grid; gap: 1.4rem; padding: 0 5% 2rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  max-width: 1200px; margin: 0 auto;
+}
+.event-card { display: flex; flex-direction: column; text-decoration: none; color: inherit; }
+.event-card-img { display: block; aspect-ratio: 4 / 3; overflow: hidden; }
+.event-card-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 1.2s cubic-bezier(.2,.7,.2,1); }
+.event-card:hover .event-card-img img { transform: scale(1.08); }
+.event-card-body { display: grid; gap: .5rem; padding: 1.2rem 1.3rem 1.4rem; }
+.event-card-body em { font-style: normal; }
+.event-card-body strong { font-size: 1.7rem; line-height: 1.1; }
+.event-card-body q { font-style: italic; opacity: .8; quotes: "“" "”"; }
+
+.event-hero {
+  display: grid; gap: 2rem; grid-template-columns: 1.1fr .9fr; align-items: center;
+  max-width: 1200px; margin: 1.5rem auto; padding: clamp(1.4rem, 4vw, 3rem); width: 90%;
+}
+.event-tagline { font: italic 1.5rem "Cormorant Garamond", serif; color: var(--gold-3); margin: .3rem 0 1rem; }
+.back-link { display: inline-block; margin-bottom: 1rem; }
+.event-hero-img { margin: 0; position: relative; border-radius: 18px; overflow: hidden; box-shadow: 0 24px 60px rgba(36,32,25,.25); }
+.event-hero-img img { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; }
+.event-hero-img figcaption {
+  position: absolute; left: 0; right: 0; bottom: 0; padding: 2.5rem 1.2rem 1.1rem;
+  font: italic 1.25rem "Cormorant Garamond", serif; color: #fffdf7;
+  background: linear-gradient(transparent, rgba(29,26,20,.78));
+}
+.event-about { max-width: 900px; width: 90%; margin: 1.5rem auto; padding: clamp(1.4rem, 4vw, 2.6rem); text-align: center; }
+.event-lead { font: 1.35rem/1.6 "Cormorant Garamond", serif; margin: .5rem 0 1rem; }
+.event-ideal { margin: 0; opacity: .85; }
+.event-covered { max-width: 1100px; margin: 2rem auto; padding: 0 5%; }
+.covered-grid { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); }
+.covered-grid li { padding: 1rem 1.2rem; display: flex; gap: .7rem; align-items: baseline; }
+.covered-grid li span { color: var(--gold-2); }
+.event-moments { max-width: 1100px; width: 90%; margin: 2rem auto; padding: 2rem 1.4rem; text-align: center; }
+.event-moments ul { list-style: none; margin: 1.2rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: .8rem; justify-content: center; }
+.event-moments li { padding: .6rem 1.2rem; border-radius: 999px; border: 1px solid rgba(243,220,154,.45); color: var(--gold-1); font: italic 1.15rem "Cormorant Garamond", serif; }
+.event-pager { max-width: 900px; width: 90%; margin: 2rem auto; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.event-pager a { padding: 1rem 1.3rem; text-decoration: none; color: inherit; font: 1.5rem "Cormorant Garamond", serif; }
+.event-pager a:last-child { text-align: right; }
+.event-pager span { display: block; font: .75rem Jost, sans-serif; letter-spacing: .15em; text-transform: uppercase; color: var(--gold-3); }
+#packages { scroll-margin-top: 100px; }
+
+@media (max-width: 800px) {
+  .event-hero { grid-template-columns: 1fr; }
+  .event-hero-img { order: -1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body::before { animation: none; }
+  .glass-card::after, .contact-link::after, .nav-book::after { display: none; }
+}

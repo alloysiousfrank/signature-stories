@@ -1,0 +1,29 @@
+{
+  "name": "signature-stories-api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "API for Signature Stories: customer enquiries and the admin panel",
+  "main": "src/index.js",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "seed:admin": "node scripts/seedAdmin.js",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.0",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.0.0",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.17.0",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "supertest": "^7.1.4"
+  }
+}
