@@ -191,6 +191,10 @@ h1, h2, h3, .event-card strong, .package h3 { font-family: "Cormorant Garamond",
 .chip:disabled { opacity: .4; cursor: not-allowed; text-decoration: line-through; }
 
 /* ---- WhatsApp button ---- */
-.wa-float { position: fixed; right: 18px; bottom: 18px; z-index: 60; width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, #3ddc84, #1faa59); box-shadow: 0 10px 28px rgba(31,170,89,.45); }
-.wa-float svg { width: 30px; height: 30px; }
-.wa-float:hover { transform: translateY(-3px); }
+.wa-float { position: fixed; right: 18px; bottom: 18px; z-index: 60; width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; color: #fffdf7;
+  background: linear-gradient(145deg, #f3dc9a 0%, #b99a55 45%, #8b6f33 100%);
+  border: 2px solid rgba(255,255,255,.85);
+  box-shadow: 0 10px 28px rgba(139,111,51,.45), 0 0 0 5px rgba(208,203,176,.45), inset 0 1px 0 rgba(255,255,255,.7);
+  transition: transform .3s ease, box-shadow .3s ease; }
+.wa-float svg { width: 30px; height: 30px; filter: drop-shadow(0 1px 1px rgba(36,32,25,.35)); }
+.wa-float:hover { transform: translateY(-3px); box-shadow: 0 14px 34px rgba(139,111,51,.6), 0 0 0 4px rgba(243,220,154,.4), inset 0 1px 0 rgba(255,255,255,.9); }

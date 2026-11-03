@@ -9,7 +9,7 @@ export const BUSINESS = {
   tagline: "Crafting occasions worth remembering.",
   owner: "Arjun Nair",
   ownerRole: "Founder & Lead Planner",
-  phone: "+91 98765 43210",
+  phone: "+91 88701 84906",
   address: "No. 12, Lotus Avenue, Race Course Road, Coimbatore, Tamil Nadu 641018",
   hours: "Mon – Sat · 10:00 AM – 7:00 PM",
   gstin: "33ABCDE1234F1Z5",
@@ -18,7 +18,7 @@ export const BUSINESS = {
 
 // Contact channels. WhatsApp opens a click-to-chat (no Meta Business API needed).
 // Leave WHATSAPP_NUMBER empty to hide the WhatsApp button.
-export const WHATSAPP_NUMBER = "919876543210"; // digits only with country code (dummy)
+export const WHATSAPP_NUMBER = "918870184906"; // digits only with country code
 export const CONTACT_EMAIL = "hello@signaturestories.example"; // dummy
 
 // While true, the sample testimonials and numbers below are shown so the
