@@ -46,6 +46,7 @@ export function fakeRepos() {
     async get(id) { return docs.find((d) => d.id === id) || null; },
     async update(id, patch) { const r = docs.find((d) => d.id === id); if (!r) return null; Object.assign(r, patch); return r; },
     async remove(id) { const i = docs.findIndex((d) => d.id === id); if (i < 0) return false; docs.splice(i, 1); return true; },
+    async forYear(kind, y) { return docs.filter((d) => d.kind === kind && d.issueDate.startsWith(`${y}-`)); },
     async outstanding() { const r = docs.filter((d) => d.kind === "invoice" && d.status === "sent"); return { count: r.length, amount: r.reduce((a, d) => a + d.total, 0) }; },
   };
   return { inquiryRepo, adminRepo, consultRepo, docRepo, inq, cons, docs };

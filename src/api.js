@@ -54,6 +54,8 @@ export const adminApi = {
   setDocStatus: (id, status) => request(`/api/admin/documents/${id}/status`, { method: "PATCH", auth: true, body: { status } }),
   convertDoc: (id) => request(`/api/admin/documents/${id}/convert`, { method: "POST", auth: true, body: {} }),
   removeDoc: (id) => request(`/api/admin/documents/${id}`, { method: "DELETE", auth: true }),
+  report: (year) => request(`/api/admin/reports?year=${year}`, { auth: true }),
+  sendDoc: (id, pdfBase64) => request(`/api/admin/documents/${id}/send`, { method: "POST", auth: true, body: { pdfBase64 } }),
   stats: () => request("/api/admin/stats", { auth: true }),
   list: (params) => request(`/api/admin/inquiries?${new URLSearchParams(params)}`, { auth: true }),
   setStatus: (id, status) => request(`/api/admin/inquiries/${id}`, { method: "PATCH", auth: true, body: { status } }),

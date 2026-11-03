@@ -11,8 +11,9 @@ const day = (iso) => (iso ? new Date(`${iso}T00:00:00`).toLocaleDateString("en-I
 async function logoData() {
   try {
     const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = "/assests/logo.png"; });
-    const c = document.createElement("canvas"); c.width = img.naturalWidth; c.height = img.naturalHeight;
-    c.getContext("2d").drawImage(img, 0, 0);
+    const k = Math.min(1, 420 / img.naturalWidth); // keep the PDF small enough to e-mail
+    const c = document.createElement("canvas"); c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
     return { url: c.toDataURL("image/png"), ratio: img.naturalWidth / img.naturalHeight };
   } catch { return null; }
 }
@@ -122,4 +123,9 @@ export async function buildPdf(doc) {
 export async function downloadPdf(doc) {
   const pdf = await buildPdf(doc);
   pdf.save(`${doc.number}.pdf`);
+}
+
+export async function pdfBase64(doc) {
+  const pdf = await buildPdf(doc);
+  return pdf.output("datauristring").split("base64,")[1];
 }

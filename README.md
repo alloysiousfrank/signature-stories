@@ -53,3 +53,8 @@ Create a free cluster with the owner's Google account, add a database user, allo
 - **Dummy values to replace**: business name, owner, phone, address, GSTIN and UPI ID in `src/config.js` (`BUSINESS`, `WHATSAPP_NUMBER`, `CONTACT_EMAIL`); estimator rates in `src/estimator.js`.
 - **Stock media**: photos and one video are linked from Pexels (free licence) in `src/photos.js` / `src/content.js` / `src/events.js`; if a photo fails to load the bundled sample SVG is shown. Replace with the company's own files later.
 - **WhatsApp**: click-to-chat button only (no Meta Business API). Automatic WhatsApp messages can be added later.
+
+## E-mailing documents and the revenue report
+
+- **Email to client**: in any quotation or invoice, "Email to client" saves it, builds the PDF in the browser and sends it through the Resend API (needs `RESEND_API_KEY` on the server). A draft becomes *sent*. Resend only delivers to arbitrary recipients once a sending domain is verified and `MAIL_FROM` uses it; until then it can only reach the Resend account owner's address.
+- **Revenue report** (`#/admin/reports`): built only from invoices marked *sent* or *paid*. Gross = invoice total including GST; also shows collected, outstanding, GST, net, monthly chart/table, by event type, quotation pipeline, and CSV export. The dashboard shows the same year-to-date gross and collected figures.

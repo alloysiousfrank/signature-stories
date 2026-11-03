@@ -101,6 +101,9 @@ export const mongoDocRepo = {
   async get(id) { return ok(id) ? json(await Document.findById(id)) : null; },
   async update(id, patch) { return ok(id) ? json(await Document.findByIdAndUpdate(id, patch, { new: true, runValidators: true })) : null; },
   async remove(id) { return ok(id) ? !!(await Document.findByIdAndDelete(id)) : false; },
+  async forYear(kind, year) {
+    return (await Document.find({ kind, issueDate: { $regex: `^${year}-` } }).lean()).map((d) => ({ ...d, id: String(d._id) }));
+  },
   async outstanding() {
     const rows = await Document.find({ kind: "invoice", status: "sent" }, "total").lean();
     return { count: rows.length, amount: rows.reduce((s, r) => s + (r.total || 0), 0) };

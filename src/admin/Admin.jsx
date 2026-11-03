@@ -4,6 +4,7 @@ import { EVENT_TYPES } from "../content.js";
 import CalendarView from "./Calendar.jsx";
 import Consultations from "./Consultations.jsx";
 import Documents from "./Documents.jsx";
+import Reports from "./Reports.jsx";
 import { inr } from "./shared.js";
 import "./admin.css";
 
@@ -46,6 +47,7 @@ function Dashboard() {
     ["Total enquiries", s.total], ["New (unanswered)", s.status.new], ["Booked events", s.status.booked],
     ["Consultations to confirm", s.pendingConsultations], ["Invoices awaiting payment", s.outstanding.count],
     ["Outstanding amount", inr(s.outstanding.amount)],
+    [`Gross invoiced ${s.revenue.year}`, inr(s.revenue.invoiced)], [`Collected ${s.revenue.year}`, inr(s.revenue.collected)],
   ];
   const max = Math.max(1, ...s.byType.map((t) => t.count));
   return (
@@ -225,7 +227,7 @@ function Settings({ admin }) {
 
 const NAV = [
   ["dashboard", "Dashboard"], ["inquiries", "Enquiries"], ["calendar", "Calendar"], ["consultations", "Consultations"],
-  ["quotations", "Quotations"], ["invoices", "Invoices"], ["settings", "Settings"],
+  ["quotations", "Quotations"], ["invoices", "Invoices"], ["reports", "Reports"], ["settings", "Settings"],
 ];
 
 export default function Admin({ sub, query }) {
@@ -272,6 +274,7 @@ export default function Admin({ sub, query }) {
         {sub === "consultations" && <Consultations />}
         {sub === "quotations" && <Documents kind="quotation" query={query} />}
         {sub === "invoices" && <Documents kind="invoice" query={query} />}
+        {sub === "reports" && <Reports />}
         {sub === "settings" && <Settings admin={admin} />}
       </main>
     </div>

@@ -51,6 +51,18 @@ function Editor({ initial, onBack, onSaved }) {
     try { const { downloadPdf } = await import("./pdf.js"); await downloadPdf(saved); }
     catch { setErr("Could not create the PDF."); }
   };
+  const email = async () => {
+    if (!f.client.email.trim()) { setErr("Add the client's email address first."); return; }
+    if (!window.confirm(`Email ${f.kind} to ${f.client.email}?`)) return;
+    const saved = await save();
+    if (!saved) return;
+    setBusy(true); setErr(""); setMsg("");
+    try {
+      const { pdfBase64 } = await import("./pdf.js");
+      const r = await adminApi.sendDoc(saved.id, await pdfBase64(saved));
+      setF(r.document); setMsg(`Sent to ${saved.client.email}.`); onSaved();
+    } catch (e) { setErr(e.message); } finally { setBusy(false); }
+  };
   const convert = async () => {
     if (!window.confirm("Create an invoice from this quotation? The quotation will be marked accepted.")) return;
     try { const inv = await adminApi.convertDoc(f.id); onSaved(); onBack(inv); } catch (e) { setErr(e.message); }
@@ -118,6 +130,7 @@ function Editor({ initial, onBack, onSaved }) {
         <div className="adm-actions">
           <button className="adm-btn" onClick={save} disabled={busy || !f.client.name.trim()}>{f.id ? "Save changes" : "Create"}</button>
           <button className="adm-btn" onClick={pdf} disabled={busy || !f.client.name.trim()}>Save & download PDF</button>
+          <button className="adm-btn" onClick={email} disabled={busy || !f.client.name.trim() || !f.client.email.trim()}>Email to client</button>
           {f.id && f.kind === "quotation" && <button className="adm-btn" onClick={convert}>Convert to invoice</button>}
         </div>
       </div>

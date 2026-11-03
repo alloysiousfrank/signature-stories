@@ -7,7 +7,8 @@ import { z } from "zod";
 import { signToken, requireAuth } from "./middleware/auth.js";
 import { STATUSES } from "./lib/filter.js";
 import { inquiriesToCsv } from "./lib/csv.js";
-import { notifyConsultation, notifyNewInquiry } from "./services/notify.js";
+import { buildReport } from "./lib/report.js";
+import { notifyConsultation, notifyNewInquiry, sendDocumentEmail } from "./services/notify.js";
 import { bookableDate, CONSULT_STATUSES, isIsoDate, isIsoMonth, MODES, SLOTS } from "./lib/slots.js";
 import { computeTotals, DOC_KINDS, DOC_STATUSES } from "./lib/totals.js";
 
@@ -80,6 +81,8 @@ export function createApp({ env, inquiryRepo, adminRepo, consultRepo, docRepo, f
       cb(null, false);
     },
   }));
+  // the e-mail route carries a PDF (base64), so it gets a larger body limit than everything else
+  app.use("/api/admin/documents/:id/send", express.json({ limit: "4mb" }));
   app.use(express.json({ limit: "32kb" }));
 
   const noop = (_q, _s, n) => n();
@@ -144,10 +147,12 @@ export function createApp({ env, inquiryRepo, adminRepo, consultRepo, docRepo, f
 
   // ---- admin: enquiries ----
   app.get("/api/admin/stats", auth, wrap(async (_req, res) => {
-    const [base, pending, upcoming, outstanding] = await Promise.all([
-      inquiryRepo.stats(), consultRepo.pendingCount(), consultRepo.upcoming(today()), docRepo.outstanding(),
+    const year = today().slice(0, 4);
+    const [base, pending, upcoming, outstanding, invs] = await Promise.all([
+      inquiryRepo.stats(), consultRepo.pendingCount(), consultRepo.upcoming(today()), docRepo.outstanding(), docRepo.forYear("invoice", year),
     ]);
-    res.json({ ...base, pendingConsultations: pending, upcoming, outstanding });
+    const { totals } = buildReport(invs, [], year);
+    res.json({ ...base, pendingConsultations: pending, upcoming, outstanding, revenue: { year: Number(year), invoiced: totals.invoiced, collected: totals.collected } });
   }));
 
 
@@ -259,6 +264,24 @@ export function createApp({ env, inquiryRepo, adminRepo, consultRepo, docRepo, f
     if (!DOC_STATUSES[existing.kind].includes(status)) return res.status(400).json({ error: "Invalid status" });
     res.json(await docRepo.update(req.params.id, { status, paidAt: status === "paid" ? new Date() : undefined }));
   }));
+  app.get("/api/admin/reports", auth, wrap(async (req, res) => {
+    const year = /^\d{4}$/.test(String(req.query.year)) ? String(req.query.year) : today().slice(0, 4);
+    const [invs, quotes] = await Promise.all([docRepo.forYear("invoice", year), docRepo.forYear("quotation", year)]);
+    res.json(buildReport(invs, quotes, year));
+  }));
+
+  app.post("/api/admin/documents/:id/send", auth, wrap(async (req, res) => {
+    const d = await docRepo.get(req.params.id);
+    if (!d) return res.status(404).json({ error: "Not found" });
+    if (!d.client?.email) return res.status(400).json({ error: "Add the client's email address first." });
+    const pdf = String(req.body?.pdfBase64 || "");
+    if (!/^[A-Za-z0-9+/=]+$/.test(pdf) || pdf.length < 100) return res.status(400).json({ error: "PDF missing." });
+    const r = await sendDocumentEmail(env, d, pdf, fetchImpl);
+    if (!r.ok) return res.status(502).json({ error: r.error });
+    const updated = d.status === "draft" ? await docRepo.update(d.id, { status: "sent" }) : d;
+    res.json({ ok: true, document: updated });
+  }));
+
   app.post("/api/admin/documents/:id/convert", auth, wrap(async (req, res) => {
     const q = await docRepo.get(req.params.id);
     if (!q || q.kind !== "quotation") return res.status(404).json({ error: "Quotation not found" });

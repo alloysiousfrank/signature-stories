@@ -37,3 +37,33 @@ export async function notifyConsultation(env, c, fetchImpl = fetch) {
     return res.ok;
   } catch { return false; }
 }
+
+/* E-mails a quotation / invoice PDF to the client. Returns { ok, error }. */
+export async function sendDocumentEmail(env, doc, pdfBase64, fetchImpl = fetch) {
+  if (!env.resendKey) return { ok: false, error: "E-mail is not configured on the server (RESEND_API_KEY)." };
+  const esc = (v) => String(v ?? "").replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
+  const isInv = doc.kind === "invoice";
+  const label = isInv ? "Invoice" : "Quotation";
+  const total = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(doc.total || 0);
+  const html = `<div style="font-family:Georgia,serif;color:#242019;max-width:560px">
+<h2 style="color:#8b6f33;margin:0 0 8px">Signature Stories</h2>
+<p>Dear ${esc(doc.client?.name)},</p>
+<p>Please find attached your ${label.toLowerCase()} <b>${esc(doc.number)}</b>${doc.eventType ? ` for your ${esc(doc.eventType.toLowerCase())}` : ""}.</p>
+<p style="font-size:18px"><b>Total: ${esc(total)}</b>${doc.dueDate ? `<br><span style="font-size:14px">${isInv ? "Due" : "Valid until"}: ${esc(doc.dueDate)}</span>` : ""}</p>
+<p>If you have any questions, simply reply to this email.</p>
+<p>Warm regards,<br>Team Signature Stories</p></div>`;
+  try {
+    const res = await fetchImpl("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${env.resendKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: env.mailFrom, to: [doc.client.email], reply_to: env.notifyEmail,
+        subject: `${label} ${doc.number} from Signature Stories`, html,
+        attachments: [{ filename: `${doc.number}.pdf`, content: pdfBase64 }],
+      }),
+    });
+    if (res.ok) return { ok: true };
+    const body = await res.json().catch(() => ({}));
+    return { ok: false, error: body.message || `Mail service returned ${res.status}.` };
+  } catch { return { ok: false, error: "Could not reach the mail service." }; }
+}
