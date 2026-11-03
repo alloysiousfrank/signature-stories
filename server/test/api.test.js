@@ -15,12 +15,14 @@ test("public enquiry is saved and validated", async () => {
   assert.equal(inq.length, 1);
   assert.equal(inq[0].guests, 200);
   assert.equal((await request(app).post("/api/inquiries").send({ ...good, email: "nope" })).status, 400);
-  assert.equal((await request(app).post("/api/inquiries").send({ ...good, message: "" })).status, 400);
+  assert.equal((await request(app).post("/api/inquiries").send({ name: "Only Name" })).status, 201); // name is the only required field
+  assert.equal((await request(app).post("/api/inquiries").send({ email: "a@b.co" })).status, 400);
+  assert.equal(inq.at(-1).email, "");
 });
 
 test("honeypot submissions are silently dropped", async () => {
   const { app, inq } = makeApp();
-  const r = await request(app).post("/api/inquiries").send({ ...good, website: "http://spam" });
+  const r = await request(app).post("/api/inquiries").send({ ...good, trap: "http://spam" });
   assert.equal(r.status, 201);
   assert.equal(inq.length, 0);
 });

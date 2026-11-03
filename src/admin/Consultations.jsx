@@ -39,7 +39,7 @@ export default function Consultations() {
             {data.items.map((c) => (
               <tr key={c.id} className="static">
                 <td><b>{fmtDay(c.date)}</b><small>{c.slot}</small></td>
-                <td><b>{c.name}</b><small><a href={`tel:${c.phone}`}>{c.phone}</a> · <a href={`mailto:${c.email}`}>{c.email}</a></small></td>
+                <td><b>{c.name}</b><small>{c.phone ? <a href={`tel:${c.phone}`}>{c.phone}</a> : "no phone"} · {c.email ? <a href={`mailto:${c.email}`}>{c.email}</a> : "no email"}</small></td>
                 <td>{MODE[c.mode] || c.mode}</td>
                 <td>{c.topic || "—"}</td>
                 <td>

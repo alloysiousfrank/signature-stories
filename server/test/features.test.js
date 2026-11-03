@@ -32,10 +32,11 @@ test("consultation booking: slots, double-booking, validation", async () => {
   assert.equal((await request(app).post("/api/consultations").send(book)).status, 409);
   assert.equal((await request(app).post("/api/consultations").send({ ...book, slot: "09:00" })).status, 400);
   assert.equal((await request(app).post("/api/consultations").send({ ...book, date: "2026-11-08" })).status, 400);
-  assert.equal((await request(app).post("/api/consultations").send({ ...book, slot: "12:00", website: "x" })).status, 201);
+  assert.equal((await request(app).post("/api/consultations").send({ ...book, slot: "12:00", trap: "x" })).status, 201);
   assert.equal(cons.length, 1);
+  assert.equal((await request(app).post("/api/consultations").send({ name: "Only", date: "2026-11-04", slot: "15:00" })).status, 201); // contact details optional
   const s = await request(app).get("/api/consultations/slots?date=2026-11-04");
-  assert.deepEqual(s.body.booked, ["11:00"]);
+  assert.deepEqual(s.body.booked, ["11:00", "15:00"]);
   assert.equal((await request(app).get("/api/consultations/slots?date=2026-11-08")).body.open, false);
 });
 

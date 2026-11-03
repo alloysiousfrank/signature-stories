@@ -192,7 +192,7 @@ function buildSummary(f) {
   const lines = [
     "New enquiry — Signature Stories",
     `Name: ${f.name}`,
-    `Email: ${f.email}`,
+    f.email ? `Email: ${f.email}` : null,
     f.phone ? `Phone: ${f.phone}` : null,
     `Event: ${f.type}`,
     f.pkg ? `Package: ${f.pkg}` : null,
@@ -200,13 +200,13 @@ function buildSummary(f) {
     f.date ? `Date: ${f.date}` : null,
     `Guests: about ${f.guests}`,
   ].filter(Boolean);
-  return `${lines.join("\n")}\n\n${f.message}`;
+  return `${lines.join("\n")}${f.message ? `\n\n${f.message}` : ""}`;
 }
 
 function ContactForm({ query }) {
   const wanted = query?.get("event");
   const [form, setForm] = useState({
-    name: "", email: "", phone: "", date: "", guests: 100, message: "", website: "", budget: 300000,
+    name: "", email: "", phone: "", date: "", guests: 100, message: "", trap: "", budget: 300000,
     type: EVENT_TYPES.includes(wanted) ? wanted : EVENT_TYPES[0],
     pkg: query?.get("package") || "",
   });
@@ -237,11 +237,12 @@ function ContactForm({ query }) {
         name: form.name, email: form.email, phone: form.phone, eventType: form.type,
         eventDate: form.date, guests: Number(form.guests), packageName: form.pkg,
         budget: Number(form.budget), estimate: `${inr(est.low)} – ${inr(est.high)}`,
-        message: form.message, website: form.website,
+        message: form.message, trap: form.trap,
       });
       setStatus("sent");
     } catch (err) {
-      if (err.status === 0) setStatus("manual"); // server unreachable: let them send it another way
+      // Server unreachable, not deployed (404) or failing (5xx): never lose the enquiry — offer other ways to send it.
+      if (err.status === 0 || err.status === 404 || err.status >= 500) setStatus("manual");
       else { setErrMsg(err.message); setStatus("error"); }
     }
   };
@@ -308,12 +309,12 @@ function ContactForm({ query }) {
           <button type="button" onClick={() => setForm((f) => ({ ...f, pkg: "" }))} aria-label="Remove package">×</button>
         </p>
       )}
-      <input type="text" name="website" className="hp-field" tabIndex={-1} autoComplete="off" aria-hidden="true"
-        value={form.website} onChange={set("website")} />
+      <input type="text" name="ss_trap" className="hp-field" tabIndex={-1} autoComplete="new-password" aria-hidden="true"
+        value={form.trap} onChange={set("trap")} />
 
       <div className="form-row">
         <input type="text" name="name" placeholder="Your name" required autoComplete="name" value={form.name} onChange={set("name")} />
-        <input type="email" name="email" placeholder="Email address" required autoComplete="email" value={form.email} onChange={set("email")} />
+        <input type="email" name="email" placeholder="Email (optional)" autoComplete="email" value={form.email} onChange={set("email")} />
       </div>
       <div className="form-row">
         <input type="tel" name="phone" placeholder="Phone (optional)" autoComplete="tel" value={form.phone} onChange={set("phone")} />
@@ -358,7 +359,7 @@ function ContactForm({ query }) {
         </p>
       </div>
 
-      <textarea name="message" rows="4" placeholder="Tell us about your event — the feeling you're after, venues in mind…" required value={form.message} onChange={set("message")} />
+      <textarea name="message" rows="4" placeholder="Tell us about your event — optional, share only what you like" value={form.message} onChange={set("message")} />
 
       <button className="contact-link" type="submit" disabled={status === "sending"}>
         {status === "sending" ? "Sending…" : "Send enquiry"}

@@ -92,14 +92,14 @@ function Detail({ item, onChange, onDeleted, onClose }) {
       <h2>{item.name}</h2>
       <p className="adm-muted">Received {fmt(item.createdAt)}</p>
       <dl>
-        <dt>Email</dt><dd><a href={`mailto:${item.email}`}>{item.email}</a></dd>
+        <dt>Email</dt><dd>{item.email ? <a href={`mailto:${item.email}`}>{item.email}</a> : "Not given"}</dd>
         {item.phone && <><dt>Phone</dt><dd><a href={`tel:${item.phone}`}>{item.phone}</a></dd></>}
         <dt>Event</dt><dd>{item.eventType}{item.packageName ? ` · ${item.packageName}` : ""}</dd>
         <dt>Date</dt><dd>{item.eventDate || "Not set"}</dd>
         <dt>Guests</dt><dd>{item.guests || "—"}</dd>
         {item.budget > 0 && <><dt>Budget</dt><dd>{inr(item.budget)}{item.estimate ? ` (est. ${item.estimate})` : ""}</dd></>}
       </dl>
-      <p className="adm-msg">{item.message}</p>
+      <p className="adm-msg">{item.message || "No message."}</p>
       <label className="adm-label">Status
         <select value={item.status} onChange={(e) => status(e.target.value)}>
           {Object.entries(STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}

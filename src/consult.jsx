@@ -7,7 +7,7 @@ const MODES = [["video", "Video call"], ["phone", "Phone call"], ["studio", "Vis
 const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
 export function Consult() {
-  const [form, setForm] = useState({ name: "", email: "", phone: "", date: "", slot: "", mode: "video", topic: "", website: "" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", date: "", slot: "", mode: "video", topic: "", trap: "" });
   const [slots, setSlots] = useState({ slots: [], booked: [], open: true, loading: false });
   const [status, setStatus] = useState("idle");
   const [err, setErr] = useState("");
@@ -43,7 +43,7 @@ export function Consult() {
         <div className="form-done" role="status">
           <Ornament />
           <h2>Your consultation is requested.</h2>
-          <p>{form.date} at {form.slot}. We will confirm by phone or email shortly. If you need to change it, call {BUSINESS.phone}.</p>
+          <p>{form.date} at {form.slot}. {form.phone || form.email ? "We will confirm shortly." : "You did not leave a phone or email, so please call us to confirm:"} If you need to change it, call {BUSINESS.phone}.</p>
           <a className="contact-link" href="#/home">Back to home</a>
         </div>
       </section>
@@ -60,12 +60,12 @@ export function Consult() {
         Closed on Sundays.
       </p>
       <form className="contact-form lux-form" onSubmit={submit}>
-        <input type="text" name="website" className="hp-field" tabIndex={-1} autoComplete="off" aria-hidden="true" value={form.website} onChange={set("website")} />
+        <input type="text" name="ss_trap" className="hp-field" tabIndex={-1} autoComplete="new-password" aria-hidden="true" value={form.trap} onChange={set("trap")} />
         <div className="form-row">
           <input type="text" placeholder="Your name" required autoComplete="name" value={form.name} onChange={set("name")} />
-          <input type="tel" placeholder="Phone number" required minLength={6} autoComplete="tel" value={form.phone} onChange={set("phone")} />
+          <input type="tel" placeholder="Phone (optional)" autoComplete="tel" value={form.phone} onChange={set("phone")} />
         </div>
-        <input type="email" placeholder="Email address" required autoComplete="email" value={form.email} onChange={set("email")} />
+        <input type="email" placeholder="Email (optional)" autoComplete="email" value={form.email} onChange={set("email")} />
 
         <fieldset className="field-group">
           <legend>How would you like to meet?</legend>

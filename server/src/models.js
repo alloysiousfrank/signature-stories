@@ -25,15 +25,15 @@ const noteSchema = new mongoose.Schema({
 
 const inquirySchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true, maxlength: 120 },
-  email: { type: String, required: true, trim: true, lowercase: true, maxlength: 200 },
+  email: { type: String, trim: true, lowercase: true, maxlength: 200, default: "" },
   phone: { type: String, trim: true, maxlength: 40, default: "" },
   eventType: { type: String, trim: true, maxlength: 60, default: "Other" },
   eventDate: { type: String, default: "" },
-  guests: { type: Number, min: 1, max: 100000, default: 0 },
+  guests: { type: Number, min: 0, max: 100000, default: 0 },
   packageName: { type: String, trim: true, maxlength: 80, default: "" },
   budget: { type: Number, min: 0, default: 0 },
   estimate: { type: String, trim: true, maxlength: 80, default: "" },
-  message: { type: String, required: true, trim: true, maxlength: 4000 },
+  message: { type: String, trim: true, maxlength: 4000, default: "" },
   status: { type: String, enum: STATUSES, default: "new", index: true },
   notes: { type: [noteSchema], default: [] },
 }, opts);
@@ -41,8 +41,8 @@ inquirySchema.index({ createdAt: -1 });
 
 const consultSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true, maxlength: 120 },
-  email: { type: String, required: true, trim: true, lowercase: true, maxlength: 200 },
-  phone: { type: String, required: true, trim: true, maxlength: 40 },
+  email: { type: String, trim: true, lowercase: true, maxlength: 200, default: "" },
+  phone: { type: String, trim: true, maxlength: 40, default: "" },
   date: { type: String, required: true, index: true },
   slot: { type: String, required: true },
   mode: { type: String, enum: MODES, default: "video" },

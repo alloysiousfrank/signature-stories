@@ -12,9 +12,11 @@ import { notifyConsultation, notifyNewInquiry, sendDocumentEmail } from "./servi
 import { bookableDate, CONSULT_STATUSES, isIsoDate, isIsoMonth, MODES, SLOTS } from "./lib/slots.js";
 import { computeTotals, DOC_KINDS, DOC_STATUSES } from "./lib/totals.js";
 
+// Only the name is required — people should never be forced to hand over details they are not comfortable sharing.
+const optEmail = z.string().trim().max(200).refine((v) => v === "" || /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v), "bad email").optional().default("");
 const inquirySchema = z.object({
   name: z.string().trim().min(1).max(120),
-  email: z.string().trim().email().max(200),
+  email: optEmail,
   phone: z.string().trim().max(40).optional().default(""),
   eventType: z.string().trim().max(60).optional().default("Other"),
   eventDate: z.string().trim().max(20).optional().default(""),
@@ -22,19 +24,19 @@ const inquirySchema = z.object({
   packageName: z.string().trim().max(80).optional().default(""),
   budget: z.coerce.number().min(0).max(1e9).optional().default(0),
   estimate: z.string().trim().max(80).optional().default(""),
-  message: z.string().trim().min(1).max(4000),
-  website: z.string().optional(), // honeypot: real people leave it empty
+  message: z.string().trim().max(4000).optional().default(""),
+  trap: z.string().optional(), // honeypot: real people leave it empty
 });
 
 const consultSchema = z.object({
   name: z.string().trim().min(1).max(120),
-  email: z.string().trim().email().max(200),
-  phone: z.string().trim().min(6).max(40),
+  email: optEmail,
+  phone: z.string().trim().max(40).optional().default(""),
   date: z.string(),
   slot: z.enum(SLOTS),
   mode: z.enum(MODES).optional().default("video"),
   topic: z.string().trim().max(1000).optional().default(""),
-  website: z.string().optional(),
+  trap: z.string().optional(),
 });
 const consultStatusSchema = z.object({ status: z.enum(CONSULT_STATUSES) });
 const isoOrEmpty = z.string().refine((v) => v === "" || isIsoDate(v));
@@ -97,8 +99,8 @@ export function createApp({ env, inquiryRepo, adminRepo, consultRepo, docRepo, f
   app.post("/api/inquiries", submitLimit, wrap(async (req, res) => {
     const parsed = inquirySchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "Please check the form and try again." });
-    const { website, ...data } = parsed.data;
-    if (website) return res.status(201).json({ ok: true }); // bots: pretend success, store nothing
+    const { trap, ...data } = parsed.data;
+    if (trap) return res.status(201).json({ ok: true }); // bots: pretend success, store nothing
     const saved = await inquiryRepo.create(data);
     notifyNewInquiry(env, saved, fetchImpl);
     res.status(201).json({ ok: true });
@@ -114,8 +116,8 @@ export function createApp({ env, inquiryRepo, adminRepo, consultRepo, docRepo, f
   app.post("/api/consultations", submitLimit, wrap(async (req, res) => {
     const p = consultSchema.safeParse(req.body);
     if (!p.success) return res.status(400).json({ error: "Please check the form and try again." });
-    const { website, ...data } = p.data;
-    if (website) return res.status(201).json({ ok: true });
+    const { trap, ...data } = p.data;
+    if (trap) return res.status(201).json({ ok: true });
     if (!bookableDate(data.date, today())) return res.status(400).json({ error: "Please choose a future date (we are closed on Sundays)." });
     const saved = await consultRepo.create(data);
     if (!saved) return res.status(409).json({ error: "That time was just taken. Please pick another slot." });
