@@ -5,6 +5,8 @@ import { REVEAL_IMAGES } from "./introImages.js";
 import "./luxury.css";
 import "./glass.css";
 import { EventDetail, Events } from "./events.jsx";
+import { Consult } from "./consult.jsx";
+import { BUSINESS, WHATSAPP_NUMBER } from "./config.js";
 import { About, Contact, Gallery, Home, Services } from "./pages.jsx";
 import { LuxuryLayer } from "./ui.jsx";
 
@@ -43,7 +45,7 @@ function parseHash() {
   const raw = window.location.hash.replace(/^#\/?/, "");
   const [path, qs = ""] = raw.split("?");
   const [page, param = ""] = path.split("/");
-  const known = [...PAGES, "admin"];
+  const known = [...PAGES, "consult", "admin"];
   return { page: known.includes(page) ? page : "home", param, query: new URLSearchParams(qs) };
 }
 
@@ -180,8 +182,15 @@ function Footer() {
   return (
     <footer className="site-footer" data-reveal>
       <img className="footer-logo" src="/assests/logo.png" alt="" />
-      <p>Signature Stories · Event Planner</p>
-      <p className="footer-fine">Crafting occasions worth remembering.</p>
+      <p>{BUSINESS.name}</p>
+      <p className="footer-fine">{BUSINESS.tagline}</p>
+      <p className="footer-fine">
+        {BUSINESS.address} · <a href={`tel:${BUSINESS.phone.replace(/\s/g, "")}`}>{BUSINESS.phone}</a>
+      </p>
+      <p className="footer-fine">
+        <a href="#/consult">Book a consultation</a> · Sample photos and video via{" "}
+        <a href="https://www.pexels.com" target="_blank" rel="noreferrer">Pexels</a>
+      </p>
     </footer>
   );
 }
@@ -200,7 +209,7 @@ export default function App() {
   if (isAdmin) {
     return (
       <Suspense fallback={null}>
-        <Admin sub={param || "dashboard"} />
+        <Admin sub={param || "dashboard"} query={query} />
       </Suspense>
     );
   }
@@ -217,10 +226,16 @@ export default function App() {
           {page === "services" && <Services />}
           {page === "events" && (param ? <EventDetail slug={param} /> : <Events />)}
           {page === "gallery" && <Gallery />}
+          {page === "consult" && <Consult />}
           {page === "contact" && <Contact key={query.toString()} query={query} />}
         </main>
         <Footer />
         <LuxuryLayer />
+        {WHATSAPP_NUMBER && (
+          <a className="wa-float" href={`https://wa.me/${WHATSAPP_NUMBER}`} target="_blank" rel="noreferrer" aria-label="Chat on WhatsApp">
+            <svg viewBox="0 0 32 32" aria-hidden="true"><path fill="currentColor" d="M16 3a13 13 0 0 0-11 19.8L3 29l6.4-2A13 13 0 1 0 16 3Zm0 2.4a10.6 10.6 0 1 1-5.6 19.6l-.4-.2-3.8 1.2 1.2-3.7-.3-.4A10.6 10.6 0 0 1 16 5.4Zm-4 5.3c-.3 0-.7.1-1 .5-.4.4-1.300 1.300-1.300 3.100s1.300 3.500 1.500 3.800c.2.2 2.600 4.100 6.400 5.600 3.100 1.200 3.800 1 4.500.9.700-.1 2.200-.9 2.500-1.800.3-.9.3-1.600.2-1.800-.1-.2-.4-.3-.8-.5s-2.200-1.100-2.500-1.200c-.4-.1-.6-.2-.9.200-.3.400-1 1.200-1.200 1.400-.2.300-.4.300-.8.100-.4-.2-1.600-.6-3-1.900-1.100-1-1.900-2.200-2.100-2.600-.2-.4 0-.6.200-.8l.6-.7c.2-.2.200-.4.400-.6.100-.3.100-.5 0-.7l-1.200-2.900c-.3-.7-.6-.7-.9-.7Z"/></svg>
+          </a>
+        )}
       </div>
     </>
   );

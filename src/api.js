@@ -33,6 +33,8 @@ async function request(path, { method = "GET", body, auth = false, raw = false }
 
 export const publicApi = {
   submitInquiry: (payload) => request("/api/inquiries", { method: "POST", body: payload }),
+  slots: (date) => request(`/api/consultations/slots?date=${encodeURIComponent(date)}`),
+  bookConsultation: (payload) => request("/api/consultations", { method: "POST", body: payload }),
 };
 
 export const adminApi = {
@@ -40,6 +42,18 @@ export const adminApi = {
   me: () => request("/api/auth/me", { auth: true }),
   changePassword: (currentPassword, newPassword) =>
     request("/api/auth/change-password", { method: "POST", auth: true, body: { currentPassword, newPassword } }),
+  getInquiry: (id) => request(`/api/admin/inquiries/${id}`, { auth: true }),
+  calendar: (month) => request(`/api/admin/calendar?month=${month}`, { auth: true }),
+  consultations: (params) => request(`/api/admin/consultations?${new URLSearchParams(params)}`, { auth: true }),
+  setConsultStatus: (id, status) => request(`/api/admin/consultations/${id}`, { method: "PATCH", auth: true, body: { status } }),
+  removeConsultation: (id) => request(`/api/admin/consultations/${id}`, { method: "DELETE", auth: true }),
+  docs: (params) => request(`/api/admin/documents?${new URLSearchParams(params)}`, { auth: true }),
+  getDoc: (id) => request(`/api/admin/documents/${id}`, { auth: true }),
+  createDoc: (body) => request("/api/admin/documents", { method: "POST", auth: true, body }),
+  updateDoc: (id, body) => request(`/api/admin/documents/${id}`, { method: "PUT", auth: true, body }),
+  setDocStatus: (id, status) => request(`/api/admin/documents/${id}/status`, { method: "PATCH", auth: true, body: { status } }),
+  convertDoc: (id) => request(`/api/admin/documents/${id}/convert`, { method: "POST", auth: true, body: {} }),
+  removeDoc: (id) => request(`/api/admin/documents/${id}`, { method: "DELETE", auth: true }),
   stats: () => request("/api/admin/stats", { auth: true }),
   list: (params) => request(`/api/admin/inquiries?${new URLSearchParams(params)}`, { auth: true }),
   setStatus: (id, status) => request(`/api/admin/inquiries/${id}`, { method: "PATCH", auth: true, body: { status } }),

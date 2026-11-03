@@ -7,7 +7,9 @@ import { z } from "zod";
 import { signToken, requireAuth } from "./middleware/auth.js";
 import { STATUSES } from "./lib/filter.js";
 import { inquiriesToCsv } from "./lib/csv.js";
-import { notifyNewInquiry } from "./services/notify.js";
+import { notifyConsultation, notifyNewInquiry } from "./services/notify.js";
+import { bookableDate, CONSULT_STATUSES, isIsoDate, isIsoMonth, MODES, SLOTS } from "./lib/slots.js";
+import { computeTotals, DOC_KINDS, DOC_STATUSES } from "./lib/totals.js";
 
 const inquirySchema = z.object({
   name: z.string().trim().min(1).max(120),
@@ -17,8 +19,47 @@ const inquirySchema = z.object({
   eventDate: z.string().trim().max(20).optional().default(""),
   guests: z.coerce.number().int().min(0).max(100000).optional().default(0),
   packageName: z.string().trim().max(80).optional().default(""),
+  budget: z.coerce.number().min(0).max(1e9).optional().default(0),
+  estimate: z.string().trim().max(80).optional().default(""),
   message: z.string().trim().min(1).max(4000),
   website: z.string().optional(), // honeypot: real people leave it empty
+});
+
+const consultSchema = z.object({
+  name: z.string().trim().min(1).max(120),
+  email: z.string().trim().email().max(200),
+  phone: z.string().trim().min(6).max(40),
+  date: z.string(),
+  slot: z.enum(SLOTS),
+  mode: z.enum(MODES).optional().default("video"),
+  topic: z.string().trim().max(1000).optional().default(""),
+  website: z.string().optional(),
+});
+const consultStatusSchema = z.object({ status: z.enum(CONSULT_STATUSES) });
+const isoOrEmpty = z.string().refine((v) => v === "" || isIsoDate(v));
+const docSchema = z.object({
+  kind: z.enum(DOC_KINDS),
+  status: z.string().optional(),
+  client: z.object({
+    name: z.string().trim().min(1).max(120),
+    email: z.string().trim().max(200).optional().default(""),
+    phone: z.string().trim().max(40).optional().default(""),
+    address: z.string().trim().max(400).optional().default(""),
+  }),
+  eventType: z.string().trim().max(60).optional().default(""),
+  eventDate: isoOrEmpty.optional().default(""),
+  venue: z.string().trim().max(200).optional().default(""),
+  items: z.array(z.object({
+    description: z.string().trim().min(1).max(300),
+    qty: z.coerce.number().min(0).max(100000),
+    rate: z.coerce.number().min(0).max(1e9),
+  })).min(1).max(60),
+  gstPercent: z.coerce.number().min(0).max(40).optional().default(18),
+  discount: z.coerce.number().min(0).optional().default(0),
+  issueDate: z.string().refine(isIsoDate),
+  dueDate: isoOrEmpty.optional().default(""),
+  notes: z.string().trim().max(2000).optional().default(""),
+  inquiryId: z.string().max(40).optional().default(""),
 });
 
 const loginSchema = z.object({ password: z.string().min(1).max(200) });
@@ -29,7 +70,7 @@ const statusSchema = z.object({ status: z.enum(STATUSES) });
 const limiter = (windowMs, limit, message) =>
   rateLimit({ windowMs, limit, standardHeaders: true, legacyHeaders: false, message: { error: message } });
 
-export function createApp({ env, inquiryRepo, adminRepo, fetchImpl, rateLimits = true }) {
+export function createApp({ env, inquiryRepo, adminRepo, consultRepo, docRepo, fetchImpl, rateLimits = true, today = () => new Date().toISOString().slice(0, 10) }) {
   const app = express();
   app.set("trust proxy", 1);
   app.use(helmet());
@@ -60,6 +101,25 @@ export function createApp({ env, inquiryRepo, adminRepo, fetchImpl, rateLimits =
     res.status(201).json({ ok: true });
   }));
 
+  // ---- public: consultation booking ----
+  app.get("/api/consultations/slots", wrap(async (req, res) => {
+    const date = String(req.query.date || "");
+    if (!bookableDate(date, today())) return res.json({ slots: [], booked: [], open: false });
+    res.json({ slots: SLOTS, booked: await consultRepo.bookedSlots(date), open: true });
+  }));
+
+  app.post("/api/consultations", submitLimit, wrap(async (req, res) => {
+    const p = consultSchema.safeParse(req.body);
+    if (!p.success) return res.status(400).json({ error: "Please check the form and try again." });
+    const { website, ...data } = p.data;
+    if (website) return res.status(201).json({ ok: true });
+    if (!bookableDate(data.date, today())) return res.status(400).json({ error: "Please choose a future date (we are closed on Sundays)." });
+    const saved = await consultRepo.create(data);
+    if (!saved) return res.status(409).json({ error: "That time was just taken. Please pick another slot." });
+    notifyConsultation(env, saved, fetchImpl);
+    res.status(201).json({ ok: true });
+  }));
+
   // ---- auth ----
   app.post("/api/auth/login", loginLimit, wrap(async (req, res) => {
     const p = loginSchema.safeParse(req.body);
@@ -83,7 +143,13 @@ export function createApp({ env, inquiryRepo, adminRepo, fetchImpl, rateLimits =
   }));
 
   // ---- admin: enquiries ----
-  app.get("/api/admin/stats", auth, wrap(async (_req, res) => res.json(await inquiryRepo.stats())));
+  app.get("/api/admin/stats", auth, wrap(async (_req, res) => {
+    const [base, pending, upcoming, outstanding] = await Promise.all([
+      inquiryRepo.stats(), consultRepo.pendingCount(), consultRepo.upcoming(today()), docRepo.outstanding(),
+    ]);
+    res.json({ ...base, pendingConsultations: pending, upcoming, outstanding });
+  }));
+
 
   app.get("/api/admin/inquiries/export.csv", auth, wrap(async (req, res) => {
     const rows = await inquiryRepo.all({ status: req.query.status, eventType: req.query.eventType, q: req.query.q });
@@ -124,6 +190,87 @@ export function createApp({ env, inquiryRepo, adminRepo, fetchImpl, rateLimits =
 
   app.delete("/api/admin/inquiries/:id", auth, wrap(async (req, res) => {
     if (!(await inquiryRepo.remove(req.params.id))) return res.status(404).json({ error: "Not found" });
+    res.json({ ok: true });
+  }));
+
+  app.get("/api/admin/calendar", auth, wrap(async (req, res) => {
+    const month = String(req.query.month || "");
+    if (!isIsoMonth(month)) return res.status(400).json({ error: "month must be YYYY-MM" });
+    const [consultations, events] = await Promise.all([consultRepo.byMonth(month), inquiryRepo.byEventMonth(month)]);
+    res.json({ consultations, events });
+  }));
+
+  // ---- admin: consultations ----
+  app.get("/api/admin/consultations", auth, wrap(async (req, res) => {
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const status = CONSULT_STATUSES.includes(req.query.status) ? req.query.status : undefined;
+    const { items, total } = await consultRepo.list({ status }, { page, limit: 20 });
+    res.json({ items, total, page, pages: Math.max(1, Math.ceil(total / 20)) });
+  }));
+  app.patch("/api/admin/consultations/:id", auth, wrap(async (req, res) => {
+    const p = consultStatusSchema.safeParse(req.body);
+    if (!p.success) return res.status(400).json({ error: "Invalid status" });
+    const item = await consultRepo.setStatus(req.params.id, p.data.status);
+    if (item === "conflict") return res.status(409).json({ error: "That slot has since been booked by someone else." });
+    if (!item) return res.status(404).json({ error: "Not found" });
+    res.json(item);
+  }));
+  app.delete("/api/admin/consultations/:id", auth, wrap(async (req, res) => {
+    if (!(await consultRepo.remove(req.params.id))) return res.status(404).json({ error: "Not found" });
+    res.json({ ok: true });
+  }));
+
+  // ---- admin: invoices & quotations ----
+  const withTotals = (d) => ({ ...d, ...computeTotals(d) });
+  app.get("/api/admin/documents", auth, wrap(async (req, res) => {
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const kind = DOC_KINDS.includes(req.query.kind) ? req.query.kind : undefined;
+    const { items, total } = await docRepo.list({ kind, status: req.query.status, q: req.query.q }, { page, limit: 20 });
+    res.json({ items, total, page, pages: Math.max(1, Math.ceil(total / 20)) });
+  }));
+  app.post("/api/admin/documents", auth, wrap(async (req, res) => {
+    const p = docSchema.safeParse(req.body);
+    if (!p.success) return res.status(400).json({ error: "Please check the document details." });
+    const d = p.data;
+    const status = d.status && DOC_STATUSES[d.kind].includes(d.status) ? d.status : "draft";
+    const number = await docRepo.nextNumber(d.kind, d.issueDate.slice(0, 4));
+    res.status(201).json(await docRepo.create(withTotals({ ...d, status, number })));
+  }));
+  app.get("/api/admin/documents/:id", auth, wrap(async (req, res) => {
+    const d = await docRepo.get(req.params.id);
+    if (!d) return res.status(404).json({ error: "Not found" });
+    res.json(d);
+  }));
+  app.put("/api/admin/documents/:id", auth, wrap(async (req, res) => {
+    const existing = await docRepo.get(req.params.id);
+    if (!existing) return res.status(404).json({ error: "Not found" });
+    const p = docSchema.safeParse({ ...req.body, kind: existing.kind });
+    if (!p.success) return res.status(400).json({ error: "Please check the document details." });
+    const d = p.data;
+    const status = d.status && DOC_STATUSES[existing.kind].includes(d.status) ? d.status : existing.status;
+    const patch = withTotals({ ...d, status });
+    patch.paidAt = status === "paid" ? existing.paidAt || new Date() : undefined;
+    res.json(await docRepo.update(req.params.id, patch));
+  }));
+  app.patch("/api/admin/documents/:id/status", auth, wrap(async (req, res) => {
+    const existing = await docRepo.get(req.params.id);
+    if (!existing) return res.status(404).json({ error: "Not found" });
+    const status = req.body?.status;
+    if (!DOC_STATUSES[existing.kind].includes(status)) return res.status(400).json({ error: "Invalid status" });
+    res.json(await docRepo.update(req.params.id, { status, paidAt: status === "paid" ? new Date() : undefined }));
+  }));
+  app.post("/api/admin/documents/:id/convert", auth, wrap(async (req, res) => {
+    const q = await docRepo.get(req.params.id);
+    if (!q || q.kind !== "quotation") return res.status(404).json({ error: "Quotation not found" });
+    const issueDate = today();
+    const number = await docRepo.nextNumber("invoice", issueDate.slice(0, 4));
+    // eslint-disable-next-line no-unused-vars
+    const { id, number: _n, createdAt, updatedAt, paidAt, ...rest } = q;
+    await docRepo.update(q.id, { status: "accepted" });
+    res.status(201).json(await docRepo.create({ ...rest, kind: "invoice", status: "draft", number, issueDate, dueDate: "" }));
+  }));
+  app.delete("/api/admin/documents/:id", auth, wrap(async (req, res) => {
+    if (!(await docRepo.remove(req.params.id))) return res.status(404).json({ error: "Not found" });
     res.json({ ok: true });
   }));
 

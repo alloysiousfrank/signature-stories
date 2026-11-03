@@ -1,9 +1,25 @@
 /* Site configuration — edit these values, no code changes needed.
    Anything left empty is simply hidden or falls back gracefully. */
 
-// Contact channels. Fill in to enable the matching button on the Contact page.
-export const WHATSAPP_NUMBER = "";      // digits only with country code, e.g. "919876543210"
-export const CONTACT_EMAIL = "";        // e.g. "hello@signaturestories.in"
+// DUMMY business details — replace with the real ones when confirmed.
+// Used on the website, the footer and the invoice / quotation PDFs.
+export const BUSINESS = {
+  name: "Signature Stories Event Planner",
+  short: "Signature Stories",
+  tagline: "Crafting occasions worth remembering.",
+  owner: "Arjun Nair",
+  ownerRole: "Founder & Lead Planner",
+  phone: "+91 98765 43210",
+  address: "No. 12, Lotus Avenue, Race Course Road, Coimbatore, Tamil Nadu 641018",
+  hours: "Mon – Sat · 10:00 AM – 7:00 PM",
+  gstin: "33ABCDE1234F1Z5",
+  upiId: "signaturestories@upi", // dummy: shown as a QR code on invoices
+};
+
+// Contact channels. WhatsApp opens a click-to-chat (no Meta Business API needed).
+// Leave WHATSAPP_NUMBER empty to hide the WhatsApp button.
+export const WHATSAPP_NUMBER = "919876543210"; // digits only with country code (dummy)
+export const CONTACT_EMAIL = "hello@signaturestories.example"; // dummy
 
 // While true, the sample testimonials and numbers below are shown so the
 // layout can be reviewed. Set to false (or fill REAL_* below) before launch.

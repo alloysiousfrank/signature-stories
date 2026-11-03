@@ -43,3 +43,13 @@ Create a free cluster with the owner's Google account, add a database user, allo
 - **API on Render** (or use `render.yaml` as a Blueprint): web service, root directory `server`, build `npm install`, start `npm start`. Env: `MONGODB_URI`, `JWT_SECRET`, `CLIENT_ORIGINS` (your Vercel URL), optional `RESEND_API_KEY`, `NOTIFY_EMAIL`, `MAIL_FROM`. Also set `ADMIN_PASSWORD`; the admin account is created on first boot, so no shell is needed.
 - **Website on Vercel**: set `VITE_API_URL` to the Render URL (no trailing slash).
 - Never commit `.env`; the admin password is never stored in the repo.
+
+
+## Consultations, calendar, quotations and invoices
+
+- **Consultation booking** at `#/consult`: date + hourly slots (10:00–17:00, closed Sundays); taken slots are disabled and double-booking is blocked by a unique database index.
+- **Budget estimator** on the Contact form (`src/estimator.js`, dummy per-guest rates). Budget and estimate are saved with the enquiry and shown in the admin panel.
+- **Admin** (`#/admin`, password only): Dashboard, Enquiries, Calendar (booked events, dated enquiries, consultations), Consultations, Quotations, Invoices, Settings. "Create quotation" on an enquiry pre-fills the client; a quotation converts to an invoice in one click. PDFs (ivory/champagne styling, GST, UPI QR on unpaid invoices) are generated in the browser. Numbers look like `SS-QUO-2026-0001`.
+- **Dummy values to replace**: business name, owner, phone, address, GSTIN and UPI ID in `src/config.js` (`BUSINESS`, `WHATSAPP_NUMBER`, `CONTACT_EMAIL`); estimator rates in `src/estimator.js`.
+- **Stock media**: photos and one video are linked from Pexels (free licence) in `src/photos.js` / `src/content.js` / `src/events.js`; if a photo fails to load the bundled sample SVG is shown. Replace with the company's own files later.
+- **WhatsApp**: click-to-chat button only (no Meta Business API). Automatic WhatsApp messages can be added later.

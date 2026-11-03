@@ -5,13 +5,14 @@
    individually after the first conversation.
    ------------------------------------------------------------------ */
 import { IMAGES } from "./content.js";
+import { px } from "./photos.js";
 
 const IMG = {
   ...IMAGES,
-  engagement: "/images/sample-engagement-rings.svg",
-  birthday: "/images/sample-birthday-balloons.svg",
-  baby: "/images/sample-baby-shower-moon.svg",
-  festive: "/images/sample-festive-lamp.svg",
+  engagement: px(34638444, "/images/sample-engagement-rings.svg"),
+  birthday: px(34379753, "/images/sample-birthday-balloons.svg"),
+  baby: px(29964260, "/images/sample-baby-shower-moon.svg"),
+  festive: px(34473414, "/images/sample-festive-lamp.svg"),
 };
 
 export const EVENTS = [

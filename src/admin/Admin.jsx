@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { adminApi, getToken, setToken } from "../api.js";
 import { EVENT_TYPES } from "../content.js";
+import CalendarView from "./Calendar.jsx";
+import Consultations from "./Consultations.jsx";
+import Documents from "./Documents.jsx";
+import { inr } from "./shared.js";
 import "./admin.css";
 
 const STATUS = { new: "New", contacted: "Contacted", booked: "Booked", closed: "Closed" };
@@ -27,7 +31,6 @@ function Login({ onDone }) {
         <input type="password" placeholder="Admin password" autoComplete="current-password" autoFocus required value={password} onChange={(e) => setPassword(e.target.value)} />
         {err && <p className="adm-err" role="alert">{err}</p>}
         <button className="adm-btn" disabled={busy}>{busy ? "Signing in…" : "Sign in"}</button>
-        <a className="adm-back" href="#/home">← Back to website</a>
       </form>
     </div>
   );
@@ -39,7 +42,11 @@ function Dashboard() {
   useEffect(() => { adminApi.stats().then(setS).catch((e) => setErr(e.message)); }, []);
   if (err) return <p className="adm-err">{err}</p>;
   if (!s) return <p className="adm-muted">Loading…</p>;
-  const tiles = [["Total enquiries", s.total], ["Last 30 days", s.last30], ["New (unanswered)", s.status.new], ["Booked", s.status.booked]];
+  const tiles = [
+    ["Total enquiries", s.total], ["New (unanswered)", s.status.new], ["Booked events", s.status.booked],
+    ["Consultations to confirm", s.pendingConsultations], ["Invoices awaiting payment", s.outstanding.count],
+    ["Outstanding amount", inr(s.outstanding.amount)],
+  ];
   const max = Math.max(1, ...s.byType.map((t) => t.count));
   return (
     <>
@@ -57,6 +64,13 @@ function Dashboard() {
             <em>{t.count}</em>
           </div>
         ))}
+      </div>
+      <div className="adm-card">
+        <h2>Upcoming consultations</h2>
+        {s.upcoming.length === 0 && <p className="adm-muted">Nothing scheduled.</p>}
+        <ul className="adm-agenda">
+          {s.upcoming.map((c) => <li key={c.id}><b>{c.date} {c.slot}</b> {c.name} <small>{c.mode} · {c.phone} · {c.status}</small></li>)}
+        </ul>
       </div>
       <p><a className="adm-btn" href="#/admin/inquiries">Open enquiries →</a></p>
     </>
@@ -81,6 +95,7 @@ function Detail({ item, onChange, onDeleted, onClose }) {
         <dt>Event</dt><dd>{item.eventType}{item.packageName ? ` · ${item.packageName}` : ""}</dd>
         <dt>Date</dt><dd>{item.eventDate || "Not set"}</dd>
         <dt>Guests</dt><dd>{item.guests || "—"}</dd>
+        {item.budget > 0 && <><dt>Budget</dt><dd>{inr(item.budget)}{item.estimate ? ` (est. ${item.estimate})` : ""}</dd></>}
       </dl>
       <p className="adm-msg">{item.message}</p>
       <label className="adm-label">Status
@@ -98,6 +113,7 @@ function Detail({ item, onChange, onDeleted, onClose }) {
         <button className="adm-btn">Add</button>
       </form>
       {err && <p className="adm-err" role="alert">{err}</p>}
+      <a className="adm-btn" href={`#/admin/quotations?inquiry=${item.id}`}>Create quotation</a>{" "}
       <button className="adm-btn adm-danger" onClick={del}>Delete enquiry</button>
     </aside>
   );
@@ -207,9 +223,12 @@ function Settings({ admin }) {
   );
 }
 
-const NAV = [["dashboard", "Dashboard"], ["inquiries", "Enquiries"], ["settings", "Settings"]];
+const NAV = [
+  ["dashboard", "Dashboard"], ["inquiries", "Enquiries"], ["calendar", "Calendar"], ["consultations", "Consultations"],
+  ["quotations", "Quotations"], ["invoices", "Invoices"], ["settings", "Settings"],
+];
 
-export default function Admin({ sub }) {
+export default function Admin({ sub, query }) {
   const [admin, setAdmin] = useState(null);
   const [checking, setChecking] = useState(!!getToken());
   const [menu, setMenu] = useState(false);
@@ -238,14 +257,21 @@ export default function Admin({ sub }) {
         <img src="/assests/logo.png" alt="Signature Stories" />
         <nav>
           {NAV.map(([k, l]) => <a key={k} href={`#/admin/${k}`} className={sub === k ? "active" : ""}>{l}</a>)}
-          <a href="#/home">View website ↗</a>
         </nav>
-        <button className="adm-btn adm-ghost" onClick={logout}>Sign out</button>
+        <button className="adm-btn adm-ghost" onClick={logout}>Log out</button>
       </aside>
       <main className="adm-main">
-        <button className="adm-burger" onClick={() => setMenu(!menu)} aria-label="Menu">☰</button>
+        <div className="adm-topbar">
+          <button className="adm-burger" onClick={() => setMenu(!menu)} aria-label="Menu">☰</button>
+          <span className="adm-who">{admin.email}</span>
+          <button className="adm-btn adm-ghost dark" onClick={logout}>Log out</button>
+        </div>
         {sub === "dashboard" && <Dashboard />}
         {sub === "inquiries" && <Inquiries />}
+        {sub === "calendar" && <CalendarView />}
+        {sub === "consultations" && <Consultations />}
+        {sub === "quotations" && <Documents kind="quotation" query={query} />}
+        {sub === "invoices" && <Documents kind="invoice" query={query} />}
         {sub === "settings" && <Settings admin={admin} />}
       </main>
     </div>

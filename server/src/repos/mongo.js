@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { Admin, Inquiry } from "../models.js";
+import { Admin, Consultation, Counter, Document, Inquiry } from "../models.js";
 import { buildFilter, STATUSES } from "../lib/filter.js";
 
 const ok = (id) => mongoose.isValidObjectId(id);
@@ -24,6 +24,9 @@ export const mongoInquiryRepo = {
     return ok(id) ? json(await Inquiry.findByIdAndUpdate(id, { $push: { notes: note } }, { new: true })) : null;
   },
   async remove(id) { return ok(id) ? !!(await Inquiry.findByIdAndDelete(id)) : false; },
+  async byEventMonth(month) {
+    return (await Inquiry.find({ eventDate: { $regex: `^${month}` }, status: { $ne: "closed" } }).sort({ eventDate: 1 })).map(json);
+  },
   async stats() {
     const since = new Date(Date.now() - 30 * 864e5);
     const [byStatus, byType, last30, total] = await Promise.all([
@@ -44,5 +47,62 @@ export const mongoAdminRepo = {
   async setPassword(id, hash) { await Admin.findByIdAndUpdate(id, { passwordHash: hash }); },
   async upsert(email, hash) {
     return Admin.findOneAndUpdate({ email: email.toLowerCase() }, { passwordHash: hash }, { upsert: true, new: true, setDefaultsOnInsert: true });
+  },
+};
+
+export const mongoConsultRepo = {
+  async bookedSlots(date) {
+    return (await Consultation.find({ date, status: { $ne: "cancelled" } }, "slot").lean()).map((r) => r.slot);
+  },
+  async create(data) {
+    try { return json(await Consultation.create(data)); }
+    catch (e) { if (e?.code === 11000) return null; throw e; }
+  },
+  async list({ status } = {}, { page = 1, limit = 20 } = {}) {
+    const f = status ? { status } : {};
+    const [items, total] = await Promise.all([
+      Consultation.find(f).sort({ date: -1, slot: -1 }).skip((page - 1) * limit).limit(limit),
+      Consultation.countDocuments(f),
+    ]);
+    return { items: items.map(json), total };
+  },
+  async byMonth(month) {
+    return (await Consultation.find({ date: { $regex: `^${month}` }, status: { $ne: "cancelled" } }).sort({ date: 1, slot: 1 })).map(json);
+  },
+  async setStatus(id, status) {
+    if (!ok(id)) return null;
+    try { return json(await Consultation.findByIdAndUpdate(id, { status }, { new: true, runValidators: true })); }
+    catch (e) { if (e?.code === 11000) return "conflict"; throw e; }
+  },
+  async remove(id) { return ok(id) ? !!(await Consultation.findByIdAndDelete(id)) : false; },
+  async pendingCount() { return Consultation.countDocuments({ status: "pending" }); },
+  async upcoming(today, n = 5) {
+    return (await Consultation.find({ date: { $gte: today }, status: { $in: ["pending", "confirmed"] } }).sort({ date: 1, slot: 1 }).limit(n)).map(json);
+  },
+};
+
+export const mongoDocRepo = {
+  async nextNumber(kind, year) {
+    const c = await Counter.findOneAndUpdate({ _id: `${kind}-${year}` }, { $inc: { n: 1 } }, { upsert: true, new: true });
+    return `SS-${kind === "invoice" ? "INV" : "QUO"}-${year}-${String(c.n).padStart(4, "0")}`;
+  },
+  async create(data) { return json(await Document.create(data)); },
+  async list({ kind, status, q } = {}, { page = 1, limit = 20 } = {}) {
+    const f = {};
+    if (kind) f.kind = kind;
+    if (status) f.status = status;
+    if (q) { const re = new RegExp(String(q).trim().slice(0, 60).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"); f.$or = [{ number: re }, { "client.name": re }]; }
+    const [items, total] = await Promise.all([
+      Document.find(f).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit),
+      Document.countDocuments(f),
+    ]);
+    return { items: items.map(json), total };
+  },
+  async get(id) { return ok(id) ? json(await Document.findById(id)) : null; },
+  async update(id, patch) { return ok(id) ? json(await Document.findByIdAndUpdate(id, patch, { new: true, runValidators: true })) : null; },
+  async remove(id) { return ok(id) ? !!(await Document.findByIdAndDelete(id)) : false; },
+  async outstanding() {
+    const rows = await Document.find({ kind: "invoice", status: "sent" }, "total").lean();
+    return { count: rows.length, amount: rows.reduce((s, r) => s + (r.total || 0), 0) };
   },
 };

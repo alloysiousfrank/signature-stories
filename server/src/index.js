@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import { loadEnv } from "./config.js";
 import { createApp } from "./app.js";
-import { mongoAdminRepo, mongoInquiryRepo } from "./repos/mongo.js";
+import { mongoAdminRepo, mongoConsultRepo, mongoDocRepo, mongoInquiryRepo } from "./repos/mongo.js";
 
 const env = loadEnv();
 if (!env.mongoUri) { console.error("MONGODB_URI is not set."); process.exit(1); }
@@ -15,5 +15,5 @@ if (env.adminPassword.length >= 10 && !(await mongoAdminRepo.findByEmail(env.adm
   await mongoAdminRepo.upsert(env.adminEmail, await bcrypt.hash(env.adminPassword, 12));
   console.log(`Admin created for ${env.adminEmail}`);
 }
-createApp({ env, inquiryRepo: mongoInquiryRepo, adminRepo: mongoAdminRepo })
+createApp({ env, inquiryRepo: mongoInquiryRepo, adminRepo: mongoAdminRepo, consultRepo: mongoConsultRepo, docRepo: mongoDocRepo })
   .listen(env.port, () => console.log(`API listening on :${env.port}`));

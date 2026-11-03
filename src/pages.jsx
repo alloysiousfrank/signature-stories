@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { publicApi } from "./api.js";
-import { CONTACT_EMAIL, SOCIALS, WHATSAPP_NUMBER } from "./config.js";
+import { BUSINESS, CONTACT_EMAIL, SOCIALS, WHATSAPP_NUMBER } from "./config.js";
+import { REEL } from "./photos.js";
+import { estimate, inr, PACKAGE_LEVELS, verdict } from "./estimator.js";
 import { EVENT_TYPES, GALLERY, IMAGES, SERVICES } from "./content.js";
 import {
   CtaBand,
@@ -34,6 +36,24 @@ function MomentsStrip() {
         ))}
       </div>
       <p className="moments-link" data-reveal><a className="text-link" href="#/gallery">View the full gallery →</a></p>
+    </section>
+  );
+}
+
+function Reel() {
+  return (
+    <section className="reel glass-card" data-reveal>
+      <div className="reel-copy">
+        <p className="eyebrow">IN MOTION</p>
+        <h2>Celebrations, as they unfold.</h2>
+        <p>
+          Light, music, flowers and the people you love — a glimpse of the kind of evening we create.
+          Sample footage shown for now; our own films will appear here.
+        </p>
+        <a className="contact-link" href="#/events">Explore our events</a>
+      </div>
+      <video className="reel-video" src={REEL.src} poster={REEL.poster} muted loop playsInline autoPlay preload="metadata"
+        aria-label="Sample wedding celebration video" />
     </section>
   );
 }
@@ -77,6 +97,7 @@ export function Home() {
 
       <Stats />
       <Promises />
+      <Reel />
       <MomentsStrip />
       <Process />
       <Testimonials />
@@ -175,6 +196,7 @@ function buildSummary(f) {
     f.phone ? `Phone: ${f.phone}` : null,
     `Event: ${f.type}`,
     f.pkg ? `Package: ${f.pkg}` : null,
+    `Budget: ${inr(f.budget)} (estimate ${inr(estimate(f).low)} – ${inr(estimate(f).high)})`,
     f.date ? `Date: ${f.date}` : null,
     `Guests: about ${f.guests}`,
   ].filter(Boolean);
@@ -184,7 +206,7 @@ function buildSummary(f) {
 function ContactForm({ query }) {
   const wanted = query?.get("event");
   const [form, setForm] = useState({
-    name: "", email: "", phone: "", date: "", guests: 100, message: "", website: "",
+    name: "", email: "", phone: "", date: "", guests: 100, message: "", website: "", budget: 300000,
     type: EVENT_TYPES.includes(wanted) ? wanted : EVENT_TYPES[0],
     pkg: query?.get("package") || "",
   });
@@ -198,6 +220,7 @@ function ContactForm({ query }) {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   });
 
+  const est = estimate({ type: form.type, guests: form.guests, pkg: form.pkg });
   const summary = buildSummary(form);
   const waHref = WHATSAPP_NUMBER
     ? `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(summary)}`
@@ -213,6 +236,7 @@ function ContactForm({ query }) {
       await publicApi.submitInquiry({
         name: form.name, email: form.email, phone: form.phone, eventType: form.type,
         eventDate: form.date, guests: Number(form.guests), packageName: form.pkg,
+        budget: Number(form.budget), estimate: `${inr(est.low)} – ${inr(est.high)}`,
         message: form.message, website: form.website,
       });
       setStatus("sent");
@@ -312,6 +336,28 @@ function ContactForm({ query }) {
         />
       </label>
 
+      <div className="estimator glass-card">
+        <p className="eyebrow">BUDGET ESTIMATOR</p>
+        <label className="guest-field">
+          <span>Package level
+            <select value={form.pkg || "Not sure yet"} onChange={(e) => setForm((f) => ({ ...f, pkg: e.target.value === "Not sure yet" ? "" : e.target.value }))}>
+              {PACKAGE_LEVELS.map((p) => <option key={p.name}>{p.name}</option>)}
+            </select>
+          </span>
+        </label>
+        <label className="guest-field">
+          <span>Your budget <strong>{inr(form.budget)}</strong></span>
+          <input
+            type="range" min="25000" max="5000000" step="25000" value={form.budget} onChange={set("budget")}
+            style={{ "--fill": `${((form.budget - 25000) / 4975000) * 100}%` }}
+          />
+        </label>
+        <p className="est-result">
+          Indicative estimate <strong>{inr(est.low)} – {inr(est.high)}</strong>
+          <small>for about {form.guests} guests. {verdict(Number(form.budget), est)} Final pricing is quoted after we talk.</small>
+        </p>
+      </div>
+
       <textarea name="message" rows="4" placeholder="Tell us about your event — the feeling you're after, venues in mind…" required value={form.message} onChange={set("message")} />
 
       <button className="contact-link" type="submit" disabled={status === "sending"}>
@@ -335,6 +381,24 @@ export function Contact({ query }) {
         Tell us about your occasion — dates, guest count, the feeling you're
         after — and we'll take it from there.
       </p>
+      <div className="contact-details glass-card">
+        <div>
+          <p className="eyebrow">THE STUDIO</p>
+          <h2>{BUSINESS.name}</h2>
+          <p>{BUSINESS.address}</p>
+          <p>{BUSINESS.hours}</p>
+        </div>
+        <div>
+          <p className="eyebrow">OWNER</p>
+          <h2>{BUSINESS.owner}</h2>
+          <p>{BUSINESS.ownerRole}</p>
+          <p><a className="text-link" href={`tel:${BUSINESS.phone.replace(/\s/g, "")}`}>{BUSINESS.phone}</a></p>
+          <p className="contact-quick">
+            {WHATSAPP_NUMBER && <a className="ghost-link" href={`https://wa.me/${WHATSAPP_NUMBER}`} target="_blank" rel="noreferrer">WhatsApp</a>}
+            <a className="ghost-link" href="#/consult">Book a consultation</a>
+          </p>
+        </div>
+      </div>
       <ContactForm query={query} />
       {SOCIALS.length > 0 && (
         <p className="socials">

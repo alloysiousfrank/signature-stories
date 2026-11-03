@@ -1,16 +1,28 @@
+import { px } from "./photos.js";
+
 /* ------------------------------------------------------------------
    Site content. Everything here is SAMPLE copy and SAMPLE images
    (files named public/images/sample-*.svg). Replace the text and swap
    the image paths with real photos whenever the final data is ready.
    ------------------------------------------------------------------ */
 
-export const IMAGES = {
+const SVG = {
   wedding: "/images/sample-wedding-arch.svg",
   celebration: "/images/sample-celebration-toast.svg",
   corporate: "/images/sample-corporate-gala.svg",
   planning: "/images/sample-planning-moodboard.svg",
   table: "/images/sample-table-setting.svg",
   florals: "/images/sample-floral-details.svg",
+};
+
+// Pexels photo ids — see photos.js
+export const IMAGES = {
+  wedding: px(33485973, SVG.wedding),
+  celebration: px(38472156, SVG.celebration),
+  corporate: px(29708266, SVG.corporate),
+  planning: px(39797460, SVG.planning),
+  table: px(29616285, SVG.table),
+  florals: px(39797458, SVG.florals),
 };
 
 export const SERVICES = [

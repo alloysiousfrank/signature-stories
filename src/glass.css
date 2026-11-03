@@ -164,3 +164,33 @@ h1, h2, h3, .event-card strong, .package h3 { font-family: "Cormorant Garamond",
   body::before { animation: none; }
   .glass-card::after, .contact-link::after, .nav-book::after { display: none; }
 }
+
+/* ---- home hero: content and buttons centred in the box ---- */
+.hero-lux { align-items: center; text-align: center; }
+.hero-lux .hero-body { margin-inline: auto; display: flex; flex-direction: column; align-items: center; }
+.hero-lux .hero-actions { justify-content: center; }
+.hero-lux .hero-description { margin-inline: auto; }
+
+/* ---- reel ---- */
+.reel { display: grid; grid-template-columns: 1.2fr .8fr; gap: 2rem; align-items: center; max-width: 1100px; width: 90%; margin: 2.5rem auto; padding: clamp(1.2rem, 4vw, 2.4rem); }
+.reel-video { width: 100%; max-width: 300px; justify-self: center; aspect-ratio: 9 / 16; object-fit: cover; border-radius: 28px; border: 6px solid rgba(255,253,247,.8); box-shadow: 0 30px 70px rgba(36,32,25,.35); background: #1d1a14; }
+@media (max-width: 800px) { .reel { grid-template-columns: 1fr; text-align: center; } .reel-video { max-width: 240px; } }
+
+/* ---- contact details, estimator ---- */
+.contact-details { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; text-align: left; padding: 1.4rem 1.6rem; margin: 1.5rem 0; }
+.contact-details h2 { font-size: 1.6rem; margin: .2rem 0 .4rem; }
+.contact-details p { margin: .2rem 0; }
+.contact-quick { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: .8rem !important; }
+.contact-quick .ghost-link { margin-top: 0; }
+@media (max-width: 700px) { .contact-details { grid-template-columns: 1fr; } }
+.estimator { padding: 1.1rem 1.3rem; display: grid; gap: .9rem; text-align: left; }
+.estimator select { margin-left: .6rem; padding: .45rem .7rem; border-radius: 10px; border: 1px solid rgba(185,154,85,.5); background: rgba(255,253,247,.8); font: inherit; }
+.est-result { margin: 0; font-size: 1.05rem; }
+.est-result strong { font: 600 1.5rem "Cormorant Garamond", serif; color: var(--gold-3); display: block; }
+.est-result small { display: block; opacity: .75; margin-top: .2rem; }
+.chip:disabled { opacity: .4; cursor: not-allowed; text-decoration: line-through; }
+
+/* ---- WhatsApp button ---- */
+.wa-float { position: fixed; right: 18px; bottom: 18px; z-index: 60; width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, #3ddc84, #1faa59); box-shadow: 0 10px 28px rgba(31,170,89,.45); }
+.wa-float svg { width: 30px; height: 30px; }
+.wa-float:hover { transform: translateY(-3px); }
