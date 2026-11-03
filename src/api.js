@@ -26,10 +26,21 @@ async function request(path, { method = "GET", body, auth = false, raw = false }
     throw new ApiError("Session expired. Please sign in again.", 401);
   }
   if (raw && res.ok) return res;
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new ApiError(data.error || "Something went wrong.", res.status);
-  return data;
+  const text = await res.text();
+  let data = null;
+  try { data = JSON.parse(text); } catch { /* not JSON */ }
+  if (!res.ok) {
+    if (data && data.error) throw new ApiError(data.error, res.status);
+    if (!BASE && (res.status === 404 || res.status === 405)) {
+      throw new ApiError("This website is not connected to its server yet (VITE_API_URL is not set on the host).", res.status);
+    }
+    throw new ApiError(`The server did not respond properly (HTTP ${res.status}). It may be waking up — please try again in a minute.`, res.status);
+  }
+  return data ?? {};
 }
+
+/* Free hosts put idle servers to sleep. Pinging as soon as the site opens wakes it before anyone needs it. */
+export const wakeServer = () => { fetch(`${BASE}/api/health`, { cache: "no-store" }).catch(() => {}); };
 
 export const publicApi = {
   submitInquiry: (payload) => request("/api/inquiries", { method: "POST", body: payload }),

@@ -73,7 +73,7 @@ const statusSchema = z.object({ status: z.enum(STATUSES) });
 const limiter = (windowMs, limit, message) =>
   rateLimit({ windowMs, limit, standardHeaders: true, legacyHeaders: false, message: { error: message } });
 
-export function createApp({ env, inquiryRepo, adminRepo, consultRepo, docRepo, fetchImpl, rateLimits = true, today = () => new Date().toISOString().slice(0, 10) }) {
+export function createApp({ env, inquiryRepo, adminRepo, consultRepo, docRepo, fetchImpl, rateLimits = true, dbReady = () => true, today = () => new Date().toISOString().slice(0, 10) }) {
   const app = express();
   app.set("trust proxy", 1);
   app.use(helmet());
@@ -93,7 +93,10 @@ export function createApp({ env, inquiryRepo, adminRepo, consultRepo, docRepo, f
   const auth = requireAuth(env, adminRepo);
   const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 
-  app.get("/api/health", (_req, res) => res.json({ ok: true }));
+  app.get("/api/health", (_req, res) => res.json({ ok: true, db: dbReady() }));
+
+  // While the database is (re)connecting, answer clearly instead of hanging.
+  app.use("/api", (_req, res, next) => (dbReady() ? next() : res.status(503).json({ error: "The server is waking up. Please try again in a few seconds." })));
 
   // ---- public: customer enquiry ----
   app.post("/api/inquiries", submitLimit, wrap(async (req, res) => {

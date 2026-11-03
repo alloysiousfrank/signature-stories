@@ -19,11 +19,21 @@ function Login({ onDone }) {
   const submit = async (e) => {
     e.preventDefault();
     setBusy(true); setErr("");
-    try {
-      const r = await adminApi.login(password);
-      setToken(r.token);
-      onDone(r.admin);
-    } catch (x) { setErr(x.message); } finally { setBusy(false); }
+    // A sleeping free-tier server needs up to a minute to wake: keep retrying instead of failing.
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+      try {
+        const r = await adminApi.login(password);
+        setToken(r.token);
+        onDone(r.admin);
+        return;
+      } catch (x) {
+        const waking = [0, 502, 503, 504].includes(x.status);
+        if (!waking || attempt === 9) { setErr(x.message); break; }
+        setErr("Waking up the server… this can take up to a minute.");
+        await new Promise((r2) => setTimeout(r2, 6000));
+      }
+    }
+    setBusy(false);
   };
   return (
     <div className="adm-login">

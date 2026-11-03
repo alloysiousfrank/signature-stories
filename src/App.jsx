@@ -2,6 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react"
 import "./App.css";
 import IntroReveal from "./IntroReveal.jsx";
 import { REVEAL_IMAGES } from "./introImages.js";
+import { wakeServer } from "./api.js";
 import "./luxury.css";
 import "./glass.css";
 import { EventDetail, Events } from "./events.jsx";
@@ -202,6 +203,7 @@ export default function App() {
   const isAdmin = page === "admin";
   // The intro plays once per visit, on first load only, and never for the admin panel.
   const [introDone, setIntroDone] = useState(isAdmin);
+  useEffect(() => { wakeServer(); }, []);
   const go = (p) => { window.location.hash = `#/${p}`; };
 
   useScrollReveal(`${page}/${param}`);

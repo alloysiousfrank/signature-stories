@@ -100,3 +100,12 @@ test("notify posts to Resend only when configured and never throws", async () =>
   assert.equal(await notifyNewInquiry({ resendKey: "" }, {}), false);
   assert.equal(await notifyNewInquiry({ resendKey: "k" }, { name: "x" }, async () => { throw new Error("net"); }), false);
 });
+
+test("while the database is down, api answers 503 but health still works", async () => {
+  const { app } = makeApp({ dbReady: () => false });
+  const h = await request(app).get("/api/health");
+  assert.equal(h.status, 200);
+  assert.equal(h.body.db, false);
+  assert.equal((await request(app).post("/api/auth/login").send({ password: "x" })).status, 503);
+  assert.equal((await request(app).post("/api/inquiries").send(good)).status, 503);
+});

@@ -58,3 +58,12 @@ Create a free cluster with the owner's Google account, add a database user, allo
 
 - **Email to client**: in any quotation or invoice, "Email to client" saves it, builds the PDF in the browser and sends it through the Resend API (needs `RESEND_API_KEY` on the server). A draft becomes *sent*. Resend only delivers to arbitrary recipients once a sending domain is verified and `MAIL_FROM` uses it; until then it can only reach the Resend account owner's address.
 - **Revenue report** (`#/admin/reports`): built only from invoices marked *sent* or *paid*. Gross = invoice total including GST; also shows collected, outstanding, GST, net, monthly chart/table, by event type, quotation pipeline, and CSV export. The dashboard shows the same year-to-date gross and collected figures.
+
+## Keeping the API awake (24/7)
+
+Free Render services sleep after ~15 minutes without traffic and take up to a minute to wake. Three layers handle this:
+1. The website pings `/api/health` the moment it opens, and the admin login keeps retrying while the server wakes.
+2. `.github/workflows/keep-alive.yml` pings every 10 minutes (set the repo variable `API_URL`).
+3. Recommended: add a free monitor at uptimerobot.com for `https://<render-url>/api/health` with a 5-minute interval. For guaranteed always-on hosting, switch the Render service to a paid plan.
+
+`/api/health` returns `{"ok":true,"db":true}` when the database is connected; `db:false` means check `MONGODB_URI` and Atlas Network Access.

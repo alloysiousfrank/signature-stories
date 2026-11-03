@@ -1,0 +1,19 @@
+# Pings the API every ~10 minutes so a free Render service does not fall asleep.
+# Setup: GitHub repo > Settings > Secrets and variables > Actions > Variables > New variable
+#   API_URL = https://<your-render-service>.onrender.com   (no trailing slash)
+# Scheduled runs are best-effort; a dedicated monitor (e.g. UptimeRobot, 5-minute interval) is more reliable.
+name: keep-alive
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping API health
+        env:
+          API_URL: ${{ vars.API_URL }}
+        run: |
+          if [ -z "$API_URL" ]; then echo "API_URL variable not set; skipping"; exit 0; fi
+          curl -fsS --retry 3 --retry-delay 20 --max-time 90 "$API_URL/api/health" && echo
