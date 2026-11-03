@@ -198,3 +198,9 @@ h1, h2, h3, .event-card strong, .package h3 { font-family: "Cormorant Garamond",
   transition: transform .3s ease, box-shadow .3s ease; }
 .wa-float svg { display: block; width: 29px; height: 29px; margin: 0; filter: drop-shadow(0 1px 1px rgba(36,32,25,.35)); }
 .wa-float:hover { transform: translateY(-3px); box-shadow: 0 14px 34px rgba(139,111,51,.6), 0 0 0 4px rgba(243,220,154,.4), inset 0 1px 0 rgba(255,255,255,.9); }
+
+/* ---- phone / consultation links: functional, but styled to the theme (no default blue underline) ---- */
+.site-footer a, .contact-details a:not(.ghost-link), .event-pager a { color: inherit; text-decoration: none; }
+.site-footer a, .contact-details p a { font-weight: 500; border-bottom: 1px solid rgba(185,154,85,.55); padding-bottom: 1px; transition: color .25s ease, border-color .25s ease; }
+.site-footer a:hover, .contact-details p a:hover { color: var(--gold-3); border-bottom-color: var(--gold-3); }
+.site-footer .footer-fine a { color: var(--gold-3); }

@@ -7,10 +7,10 @@ export const BUSINESS = {
   name: "Signature Stories Event Planner",
   short: "Signature Stories",
   tagline: "Crafting occasions worth remembering.",
-  owner: "Arjun Nair",
+  owner: "Anbu Raja",
   ownerRole: "Founder & Lead Planner",
   phone: "+91 88701 84906",
-  address: "No. 12, Lotus Avenue, Race Course Road, Coimbatore, Tamil Nadu 641018",
+  address: "Tiruppur",
   hours: "Mon – Sat · 10:00 AM – 7:00 PM",
   gstin: "33ABCDE1234F1Z5",
   upiId: "signaturestories@upi", // dummy: shown as a QR code on invoices

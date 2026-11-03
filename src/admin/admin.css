@@ -100,3 +100,4 @@
 .adm-bars{flex:1;width:100%;display:flex;align-items:flex-end;gap:2px}
 .adm-bars b{flex:1;border-radius:4px 4px 0 0;min-height:2px;border:1px solid rgba(139,111,51,.25)}
 .adm-table tr.total td{border-top:2px solid #b99a55}
+.adm-confirm{display:inline-flex;align-items:center;gap:.4rem;flex-wrap:wrap;font-size:.85rem;color:#a1362b}

@@ -1,11 +1,12 @@
 /* Invoice / quotation PDFs, styled in the site's ivory + champagne palette.
-   Libraries load on demand so the public site stays light. The built-in PDF
-   fonts have no rupee glyph, so amounts are written as "Rs." */
+   Libraries and fonts load on demand so the public site stays light.
+   Fonts: Cinzel (headings) and Cormorant Garamond (text), both SIL OFL;
+   they include the rupee sign. */
 import { BUSINESS } from "../config.js";
 import { computeTotals } from "./shared.js";
 
 const GOLD = [185, 154, 85], GOLD_DARK = [139, 111, 51], INK = [36, 32, 25], IVORY = [245, 240, 223], MUTED = [122, 115, 95];
-const money = (n) => `Rs. ${new Intl.NumberFormat("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n || 0)}`;
+const money = (n) => `\u20B9 ${new Intl.NumberFormat("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n || 0)}`;
 const day = (iso) => (iso ? new Date(`${iso}T00:00:00`).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—");
 
 async function logoData() {
@@ -19,9 +20,13 @@ async function logoData() {
 }
 
 export async function buildPdf(doc) {
-  const [{ jsPDF }, autoTableMod, QR] = await Promise.all([import("jspdf"), import("jspdf-autotable"), import("qrcode")]);
+  const [{ jsPDF }, autoTableMod, QR, F] = await Promise.all([import("jspdf"), import("jspdf-autotable"), import("qrcode"), import("./pdfFonts.js")]);
   const autoTable = autoTableMod.default || autoTableMod.autoTable;
   const pdf = new jsPDF({ unit: "mm", format: "a4" });
+  for (const [file, data, name, style] of [
+    ["Cinzel.ttf", F.cinzel, "Cinzel", "normal"], ["CormorantM.ttf", F.body, "Cormorant", "normal"],
+    ["CormorantSB.ttf", F.bold, "Cormorant", "bold"], ["CormorantI.ttf", F.italic, "Cormorant", "italic"],
+  ]) { pdf.addFileToVFS(file, data); pdf.addFont(file, name, style); }
   const W = pdf.internal.pageSize.getWidth(), H = pdf.internal.pageSize.getHeight(), M = 16;
   const isInv = doc.kind === "invoice";
   const t = computeTotals(doc);
@@ -31,9 +36,9 @@ export async function buildPdf(doc) {
   pdf.setFillColor(...GOLD); pdf.rect(0, 42, W, 1.2, "F");
   const logo = await logoData();
   if (logo) { const h = 22; pdf.addImage(logo.url, "PNG", M, 10, h * logo.ratio, h); }
-  pdf.setTextColor(...INK); pdf.setFont("times", "bold"); pdf.setFontSize(26);
+  pdf.setTextColor(...INK); pdf.setFont("Cinzel", "normal"); pdf.setFontSize(23);
   pdf.text(isInv ? "INVOICE" : "QUOTATION", W - M, 20, { align: "right" });
-  pdf.setFont("helvetica", "normal"); pdf.setFontSize(9); pdf.setTextColor(...GOLD_DARK);
+  pdf.setFont("Cormorant", "bold"); pdf.setFontSize(11); pdf.setTextColor(...GOLD_DARK);
   pdf.text(doc.number, W - M, 27, { align: "right" });
   pdf.setTextColor(...MUTED);
   pdf.text(`Date: ${day(doc.issueDate)}`, W - M, 32, { align: "right" });
@@ -41,9 +46,9 @@ export async function buildPdf(doc) {
 
   // from / to
   let y = 54;
-  pdf.setFontSize(8); pdf.setTextColor(...GOLD_DARK); pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(8.5); pdf.setTextColor(...GOLD_DARK); pdf.setFont("Cinzel", "normal");
   pdf.text("FROM", M, y); pdf.text(isInv ? "BILLED TO" : "PREPARED FOR", W / 2 + 4, y);
-  pdf.setFont("helvetica", "normal"); pdf.setTextColor(...INK); pdf.setFontSize(10);
+  pdf.setFont("Cormorant", "normal"); pdf.setTextColor(...INK); pdf.setFontSize(11.5);
   const from = [BUSINESS.name, ...pdf.splitTextToSize(BUSINESS.address, W / 2 - M - 6), `Phone: ${BUSINESS.phone}`, `GSTIN: ${BUSINESS.gstin}`];
   pdf.text(from, M, y + 6);
   const c = doc.client;
@@ -53,7 +58,7 @@ export async function buildPdf(doc) {
 
   if (doc.eventType || doc.eventDate || doc.venue) {
     pdf.setFillColor(251, 246, 232); pdf.roundedRect(M, y, W - 2 * M, 12, 2, 2, "F");
-    pdf.setFontSize(9); pdf.setTextColor(...INK);
+    pdf.setFontSize(10.5); pdf.setTextColor(...INK);
     pdf.text(`Event: ${doc.eventType || "—"}     Date: ${day(doc.eventDate)}     Venue: ${doc.venue || "—"}`, M + 4, y + 7.4);
     y += 18;
   }
@@ -64,8 +69,8 @@ export async function buildPdf(doc) {
     body: doc.items.map((it, i) => [i + 1, it.description, it.qty, money(it.rate), money(Number(it.qty) * Number(it.rate))]),
     theme: "grid",
     margin: { left: M, right: M },
-    styles: { font: "helvetica", fontSize: 9.5, textColor: INK, lineColor: [225, 217, 190], lineWidth: 0.2, cellPadding: 3 },
-    headStyles: { fillColor: GOLD_DARK, textColor: [255, 253, 247], fontStyle: "bold" },
+    styles: { font: "Cormorant", fontStyle: "normal", fontSize: 11, textColor: INK, lineColor: [225, 217, 190], lineWidth: 0.2, cellPadding: 3 },
+    headStyles: { font: "Cinzel", fontStyle: "normal", fontSize: 9, fillColor: GOLD_DARK, textColor: [255, 253, 247] },
     alternateRowStyles: { fillColor: [251, 248, 238] },
     columnStyles: { 0: { cellWidth: 10 }, 2: { cellWidth: 16, halign: "right" }, 3: { cellWidth: 34, halign: "right" }, 4: { cellWidth: 36, halign: "right" } },
   });
@@ -77,15 +82,16 @@ export async function buildPdf(doc) {
   if (doc.gstPercent) rows.push([`GST @ ${doc.gstPercent}%`, money(t.tax)]);
   autoTable(pdf, {
     startY: y, body: rows, theme: "plain", tableWidth: 82, margin: { left: W - M - 82 },
-    styles: { fontSize: 10, textColor: INK, cellPadding: 1.8 }, columnStyles: { 1: { halign: "right" } },
+    styles: { font: "Cormorant", fontStyle: "normal", fontSize: 11.5, textColor: INK, cellPadding: 1.8 }, columnStyles: { 1: { halign: "right" } },
   });
   y = pdf.lastAutoTable.finalY + 1;
   pdf.setFillColor(...GOLD_DARK); pdf.roundedRect(W - M - 82, y, 82, 11, 2, 2, "F");
-  pdf.setTextColor(255, 253, 247); pdf.setFont("helvetica", "bold"); pdf.setFontSize(11);
+  pdf.setTextColor(255, 253, 247); pdf.setFont("Cinzel", "normal"); pdf.setFontSize(10.5);
   pdf.text(isInv ? "TOTAL DUE" : "TOTAL", W - M - 78, y + 7.2);
+  pdf.setFont("Cormorant", "bold"); pdf.setFontSize(13);
   pdf.text(money(t.total), W - M - 4, y + 7.2, { align: "right" });
   if (isInv && doc.status === "paid") {
-    pdf.setTextColor(47, 107, 63); pdf.setFontSize(18); pdf.text("PAID", M, y + 8);
+    pdf.setTextColor(47, 107, 63); pdf.setFont("Cinzel", "normal"); pdf.setFontSize(18); pdf.text("PAID", M, y + 8);
   }
 
   // payment QR (invoices) + notes
@@ -95,8 +101,8 @@ export async function buildPdf(doc) {
     const qr = await QR.toDataURL(upi, { margin: 1, width: 300, color: { dark: "#242019", light: "#ffffff" } });
     if (ny + 40 > H - 24) { pdf.addPage(); ny = 20; }
     pdf.addImage(qr, "PNG", M, ny, 32, 32);
-    pdf.setTextColor(...GOLD_DARK); pdf.setFontSize(8); pdf.setFont("helvetica", "bold"); pdf.text("PAY BY UPI", M + 36, ny + 6);
-    pdf.setFont("helvetica", "normal"); pdf.setTextColor(...INK); pdf.setFontSize(9);
+    pdf.setTextColor(...GOLD_DARK); pdf.setFontSize(8.5); pdf.setFont("Cinzel", "normal"); pdf.text("PAY BY UPI", M + 36, ny + 6);
+    pdf.setFont("Cormorant", "normal"); pdf.setTextColor(...INK); pdf.setFontSize(11);
     pdf.text([`UPI ID: ${BUSINESS.upiId}`, `Amount: ${money(t.total)}`, `Ref: ${doc.number}`], M + 36, ny + 12);
     ny += 38;
   }
@@ -104,8 +110,8 @@ export async function buildPdf(doc) {
     ? "Payment is due by the date above. Thank you for choosing us."
     : "This quotation is an estimate based on the details above and is subject to final confirmation of date, venue and guest count.");
   if (ny > H - 40) { pdf.addPage(); ny = 20; }
-  pdf.setFont("helvetica", "bold"); pdf.setFontSize(8); pdf.setTextColor(...GOLD_DARK); pdf.text(isInv ? "NOTES" : "TERMS & NOTES", M, ny);
-  pdf.setFont("helvetica", "normal"); pdf.setFontSize(9); pdf.setTextColor(...INK);
+  pdf.setFont("Cinzel", "normal"); pdf.setFontSize(8.5); pdf.setTextColor(...GOLD_DARK); pdf.text(isInv ? "NOTES" : "TERMS & NOTES", M, ny);
+  pdf.setFont("Cormorant", "normal"); pdf.setFontSize(11); pdf.setTextColor(...INK);
   pdf.text(pdf.splitTextToSize(terms, W - 2 * M), M, ny + 5);
 
   // footer on every page
@@ -113,9 +119,9 @@ export async function buildPdf(doc) {
   for (let i = 1; i <= n; i++) {
     pdf.setPage(i);
     pdf.setDrawColor(...GOLD); pdf.setLineWidth(0.4); pdf.line(M, H - 16, W - M, H - 16);
-    pdf.setFontSize(8); pdf.setTextColor(...MUTED); pdf.setFont("helvetica", "normal");
-    pdf.text(`${BUSINESS.name} · ${BUSINESS.phone} · ${BUSINESS.tagline}`, W / 2, H - 11, { align: "center" });
-    pdf.text(`Page ${i} of ${n}`, W - M, H - 11, { align: "right" });
+    pdf.setFontSize(10); pdf.setTextColor(...MUTED); pdf.setFont("Cormorant", "italic");
+    pdf.text(`${BUSINESS.name}  ·  ${BUSINESS.phone}  ·  ${BUSINESS.tagline}`, W / 2, H - 11, { align: "center" });
+    pdf.setFont("Cormorant", "normal"); pdf.text(`Page ${i} of ${n}`, W - M, H - 11, { align: "right" });
   }
   return pdf;
 }

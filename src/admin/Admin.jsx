@@ -4,6 +4,7 @@ import { EVENT_TYPES } from "../content.js";
 import CalendarView from "./Calendar.jsx";
 import Consultations from "./Consultations.jsx";
 import Documents from "./Documents.jsx";
+import DeleteButton from "./DeleteButton.jsx";
 import Reports from "./Reports.jsx";
 import { inr } from "./shared.js";
 import "./admin.css";
@@ -85,7 +86,7 @@ function Detail({ item, onChange, onDeleted, onClose }) {
   const run = async (fn) => { setErr(""); try { return await fn(); } catch (e) { setErr(e.message); } };
   const status = (v) => run(async () => onChange(await adminApi.setStatus(item.id, v)));
   const addNote = (e) => { e.preventDefault(); if (!note.trim()) return; run(async () => { onChange(await adminApi.addNote(item.id, note)); setNote(""); }); };
-  const del = () => { if (window.confirm(`Delete the enquiry from ${item.name}? This cannot be undone.`)) run(async () => { await adminApi.remove(item.id); onDeleted(item.id); }); };
+  const del = () => run(async () => { await adminApi.remove(item.id); onDeleted(item.id); });
   return (
     <aside className="adm-card adm-detail" aria-label="Enquiry details">
       <button className="adm-x" onClick={onClose} aria-label="Close">×</button>
@@ -116,7 +117,7 @@ function Detail({ item, onChange, onDeleted, onClose }) {
       </form>
       {err && <p className="adm-err" role="alert">{err}</p>}
       <a className="adm-btn" href={`#/admin/quotations?inquiry=${item.id}`}>Create quotation</a>{" "}
-      <button className="adm-btn adm-danger" onClick={del}>Delete enquiry</button>
+      <DeleteButton what="this enquiry" label="Delete enquiry" onConfirm={del} />
     </aside>
   );
 }
@@ -141,6 +142,11 @@ function Inquiries() {
   useEffect(() => { load(); }, [load]);
   useEffect(() => { const t = setTimeout(() => { setPage(1); setFilters((f) => ({ ...f, q })); }, 300); return () => clearTimeout(t); }, [q]);
 
+  // Delete on the server first, then reload from the database so the list reflects what is really stored.
+  const removeRow = async (id) => {
+    try { await adminApi.remove(id); if (sel?.id === id) setSel(null); load(); }
+    catch (e) { setErr(e.message); }
+  };
   const replace = (it) => { setData((d) => ({ ...d, items: d.items.map((x) => (x.id === it.id ? it : x)) })); setSel(it); };
   const setF = (k) => (e) => { setPage(1); setFilters((f) => ({ ...f, [k]: e.target.value })); };
 
@@ -165,7 +171,7 @@ function Inquiries() {
       <div className={`adm-split ${sel ? "has-detail" : ""}`}>
         <div className="adm-card adm-tablewrap">
           <table className="adm-table">
-            <thead><tr><th>Received</th><th>Name</th><th>Event</th><th>Status</th></tr></thead>
+            <thead><tr><th>Received</th><th>Name</th><th>Event</th><th>Status</th><th /></tr></thead>
             <tbody>
               {data.items.map((it) => (
                 <tr key={it.id} className={sel?.id === it.id ? "on" : ""} onClick={() => setSel(it)} tabIndex={0}
@@ -174,9 +180,10 @@ function Inquiries() {
                   <td><b>{it.name}</b><small>{it.email}</small></td>
                   <td>{it.eventType}</td>
                   <td><span className={`adm-pill s-${it.status}`}>{STATUS[it.status]}</span></td>
+                  <td><DeleteButton small what="it" onConfirm={() => removeRow(it.id)} /></td>
                 </tr>
               ))}
-              {!loading && data.items.length === 0 && <tr><td colSpan="4" className="adm-muted">No enquiries match.</td></tr>}
+              {!loading && data.items.length === 0 && <tr><td colSpan="5" className="adm-muted">No enquiries match.</td></tr>}
             </tbody>
           </table>
           <div className="adm-pager">
@@ -191,7 +198,7 @@ function Inquiries() {
             item={sel}
             onChange={replace}
             onClose={() => setSel(null)}
-            onDeleted={(id) => { setSel(null); setData((d) => ({ ...d, total: d.total - 1, items: d.items.filter((x) => x.id !== id) })); }}
+            onDeleted={() => { setSel(null); load(); }}
           />
         )}
       </div>

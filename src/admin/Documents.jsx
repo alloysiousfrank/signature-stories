@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { adminApi } from "../api.js";
 import { EVENT_TYPES } from "../content.js";
+import DeleteButton from "./DeleteButton.jsx";
 import { computeTotals, DOC_STATUSES, fmtDay, inr, isoToday } from "./shared.js";
 
 const LINE_SUGGESTIONS = [
@@ -53,7 +54,6 @@ function Editor({ initial, onBack, onSaved }) {
   };
   const email = async () => {
     if (!f.client.email.trim()) { setErr("Add the client's email address first."); return; }
-    if (!window.confirm(`Email ${f.kind} to ${f.client.email}?`)) return;
     const saved = await save();
     if (!saved) return;
     setBusy(true); setErr(""); setMsg("");
@@ -64,7 +64,6 @@ function Editor({ initial, onBack, onSaved }) {
     } catch (e) { setErr(e.message); } finally { setBusy(false); }
   };
   const convert = async () => {
-    if (!window.confirm("Create an invoice from this quotation? The quotation will be marked accepted.")) return;
     try { const inv = await adminApi.convertDoc(f.id); onSaved(); onBack(inv); } catch (e) { setErr(e.message); }
   };
 
@@ -130,8 +129,9 @@ function Editor({ initial, onBack, onSaved }) {
         <div className="adm-actions">
           <button className="adm-btn" onClick={save} disabled={busy || !f.client.name.trim()}>{f.id ? "Save changes" : "Create"}</button>
           <button className="adm-btn" onClick={pdf} disabled={busy || !f.client.name.trim()}>Save & download PDF</button>
-          <button className="adm-btn" onClick={email} disabled={busy || !f.client.name.trim() || !f.client.email.trim()}>Email to client</button>
+          <button className="adm-btn" title="Saves and emails the PDF to the client" onClick={email} disabled={busy || !f.client.name.trim() || !f.client.email.trim()}>Email to client</button>
           {f.id && f.kind === "quotation" && <button className="adm-btn" onClick={convert}>Convert to invoice</button>}
+          {f.id && <DeleteButton what={f.number} onConfirm={async () => { try { await adminApi.removeDoc(f.id); onSaved(); onBack(); } catch (e) { setErr(e.message); } }} />}
         </div>
       </div>
     </>
@@ -169,7 +169,6 @@ export default function Documents({ kind, query }) {
 
   const open = async (id) => { try { setView(await adminApi.getDoc(id)); } catch (e) { setErr(e.message); } };
   const del = async (d) => {
-    if (!window.confirm(`Delete ${d.number}? This cannot be undone.`)) return;
     try { await adminApi.removeDoc(d.id); load(); } catch (e) { setErr(e.message); }
   };
   const quickStatus = async (d, status) => { try { await adminApi.setDocStatus(d.id, status); load(); } catch (e) { setErr(e.message); } };
@@ -208,7 +207,7 @@ export default function Documents({ kind, query }) {
                     {DOC_STATUSES[kind].map((s) => <option key={s}>{s}</option>)}
                   </select>
                 </td>
-                <td onClick={(e) => e.stopPropagation()}><button className="adm-btn adm-danger small" onClick={() => del(d)}>Delete</button></td>
+                <td onClick={(e) => e.stopPropagation()}><DeleteButton small what={d.number} onConfirm={() => del(d)} /></td>
               </tr>
             ))}
             {data.items.length === 0 && <tr><td colSpan="6" className="adm-muted">No {LABEL[kind].toLowerCase()}s yet. Create your first one.</td></tr>}

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { adminApi } from "../api.js";
+import DeleteButton from "./DeleteButton.jsx";
 import { fmtDay } from "./shared.js";
 
 const ST = ["pending", "confirmed", "completed", "cancelled"];
@@ -18,7 +19,6 @@ export default function Consultations() {
 
   const change = async (id, s) => { try { await adminApi.setConsultStatus(id, s); load(); } catch (e) { setErr(e.message); } };
   const del = async (c) => {
-    if (!window.confirm(`Delete the booking for ${c.name}?`)) return;
     try { await adminApi.removeConsultation(c.id); load(); } catch (e) { setErr(e.message); }
   };
 
@@ -47,7 +47,7 @@ export default function Consultations() {
                     {ST.map((s) => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </td>
-                <td><button className="adm-btn adm-danger small" onClick={() => del(c)}>Delete</button></td>
+                <td><DeleteButton small what="this booking" onConfirm={() => del(c)} /></td>
               </tr>
             ))}
             {data.items.length === 0 && <tr><td colSpan="6" className="adm-muted">No consultations yet.</td></tr>}
