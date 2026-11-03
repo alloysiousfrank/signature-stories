@@ -33,13 +33,13 @@ The site is fully static: upload `dist/` to any static host.
 
 ### Local run
 1. `cp server/.env.example server/.env` and fill `MONGODB_URI`, `JWT_SECRET` (32+ random chars).
-2. `ADMIN_PASSWORD='choose-a-long-password' npm --prefix server run seed:admin` (login email defaults to bengalisongaf@gmail.com).
+2. Set `ADMIN_PASSWORD` (10+ chars) in `server/.env`. The admin is created automatically on first start (or run `npm --prefix server run seed:admin`). The admin panel signs in with **password only**; the account email is `ADMIN_EMAIL` (default bengalisongaf@gmail.com).
 3. `npm --prefix server run dev` and, in another terminal, `npm run dev` (Vite proxies `/api` to port 5000).
 
 ### MongoDB Atlas (do once)
 Create a free cluster with the owner's Google account, add a database user, allow network access (0.0.0.0/0 for Render), and copy the connection string into `MONGODB_URI`.
 
 ### Deploy
-- **API on Render**: web service, root directory `server`, build `npm install`, start `npm start`. Env: `MONGODB_URI`, `JWT_SECRET`, `CLIENT_ORIGINS` (your Vercel URL), optional `RESEND_API_KEY`, `NOTIFY_EMAIL`, `MAIL_FROM`. Run the seed script once (Render shell) with `ADMIN_PASSWORD`.
+- **API on Render** (or use `render.yaml` as a Blueprint): web service, root directory `server`, build `npm install`, start `npm start`. Env: `MONGODB_URI`, `JWT_SECRET`, `CLIENT_ORIGINS` (your Vercel URL), optional `RESEND_API_KEY`, `NOTIFY_EMAIL`, `MAIL_FROM`. Also set `ADMIN_PASSWORD`; the admin account is created on first boot, so no shell is needed.
 - **Website on Vercel**: set `VITE_API_URL` to the Render URL (no trailing slash).
 - Never commit `.env`; the admin password is never stored in the repo.

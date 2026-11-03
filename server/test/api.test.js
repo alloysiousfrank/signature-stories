@@ -7,7 +7,7 @@ import { inquiriesToCsv } from "../src/lib/csv.js";
 import { notifyNewInquiry } from "../src/services/notify.js";
 
 const good = { name: "Asha", email: "asha@example.com", eventType: "Wedding", guests: "200", message: "Hello" };
-const login = async (app) => (await request(app).post("/api/auth/login").send({ email: "owner@x.com", password: "correct-horse-battery" })).body.token;
+const login = async (app) => (await request(app).post("/api/auth/login").send({ password: "correct-horse-battery" })).body.token;
 
 test("public enquiry is saved and validated", async () => {
   const { app, inq } = makeApp();
@@ -35,8 +35,7 @@ test("admin routes require a token", async () => {
 
 test("login: wrong password rejected, right one returns token", async () => {
   const { app } = makeApp();
-  assert.equal((await request(app).post("/api/auth/login").send({ email: "owner@x.com", password: "bad" })).status, 401);
-  assert.equal((await request(app).post("/api/auth/login").send({ email: "who@x.com", password: "bad" })).status, 401);
+  assert.equal((await request(app).post("/api/auth/login").send({ password: "bad" })).status, 401);
   const t = await login(app);
   assert.ok(t);
   assert.equal((await request(app).get("/api/auth/me").set("Authorization", `Bearer ${t}`)).body.admin.email, "owner@x.com");
@@ -80,7 +79,7 @@ test("change password flow", async () => {
   assert.equal((await request(app).post("/api/auth/change-password").set(auth).send({ currentPassword: "nope", newPassword: "a-new-long-pass" })).status, 400);
   assert.equal((await request(app).post("/api/auth/change-password").set(auth).send({ currentPassword: "correct-horse-battery", newPassword: "short" })).status, 400);
   assert.equal((await request(app).post("/api/auth/change-password").set(auth).send({ currentPassword: "correct-horse-battery", newPassword: "a-new-long-pass" })).status, 200);
-  assert.equal((await request(app).post("/api/auth/login").send({ email: "owner@x.com", password: "a-new-long-pass" })).status, 200);
+  assert.equal((await request(app).post("/api/auth/login").send({ password: "a-new-long-pass" })).status, 200);
 });
 
 test("buildFilter escapes regex input and ignores bad status", () => {

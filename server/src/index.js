@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 import { loadEnv } from "./config.js";
 import { createApp } from "./app.js";
 import { mongoAdminRepo, mongoInquiryRepo } from "./repos/mongo.js";
@@ -9,5 +10,10 @@ if (env.jwtSecret.length < 32) { console.error("JWT_SECRET must be set to at lea
 
 await mongoose.connect(env.mongoUri);
 console.log("MongoDB connected");
+// First start: create the single admin from ADMIN_PASSWORD (no shell needed on the host).
+if (env.adminPassword.length >= 10 && !(await mongoAdminRepo.findByEmail(env.adminEmail))) {
+  await mongoAdminRepo.upsert(env.adminEmail, await bcrypt.hash(env.adminPassword, 12));
+  console.log(`Admin created for ${env.adminEmail}`);
+}
 createApp({ env, inquiryRepo: mongoInquiryRepo, adminRepo: mongoAdminRepo })
   .listen(env.port, () => console.log(`API listening on :${env.port}`));

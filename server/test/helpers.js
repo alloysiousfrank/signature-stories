@@ -2,7 +2,7 @@ import { matches } from "../src/lib/filter.js";
 import bcrypt from "bcryptjs";
 import { createApp } from "../src/app.js";
 
-export const env = { jwtSecret: "x".repeat(40), clientOrigins: ["http://localhost:5173"], resendKey: "", notifyEmail: "n@x.com", mailFrom: "a" };
+export const env = { jwtSecret: "x".repeat(40), adminEmail: "owner@x.com", clientOrigins: ["http://localhost:5173"], resendKey: "", notifyEmail: "n@x.com", mailFrom: "a" };
 
 export function fakeRepos() {
   let n = 0;

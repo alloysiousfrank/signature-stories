@@ -21,7 +21,7 @@ const inquirySchema = z.object({
   website: z.string().optional(), // honeypot: real people leave it empty
 });
 
-const loginSchema = z.object({ email: z.string().trim().email(), password: z.string().min(1).max(200) });
+const loginSchema = z.object({ password: z.string().min(1).max(200) });
 const pwSchema = z.object({ currentPassword: z.string().min(1), newPassword: z.string().min(10).max(200) });
 const noteSchema = z.object({ text: z.string().trim().min(1).max(1000) });
 const statusSchema = z.object({ status: z.enum(STATUSES) });
@@ -63,10 +63,10 @@ export function createApp({ env, inquiryRepo, adminRepo, fetchImpl, rateLimits =
   // ---- auth ----
   app.post("/api/auth/login", loginLimit, wrap(async (req, res) => {
     const p = loginSchema.safeParse(req.body);
-    if (!p.success) return res.status(400).json({ error: "Enter your email and password." });
-    const admin = await adminRepo.findByEmail(p.data.email);
+    if (!p.success) return res.status(400).json({ error: "Enter your password." });
+    const admin = await adminRepo.findByEmail(env.adminEmail);
     const good = admin && await bcrypt.compare(p.data.password, admin.passwordHash);
-    if (!good) return res.status(401).json({ error: "Incorrect email or password." });
+    if (!good) return res.status(401).json({ error: "Incorrect password." });
     res.json({ token: signToken(env, admin), admin: { email: admin.email } });
   }));
 

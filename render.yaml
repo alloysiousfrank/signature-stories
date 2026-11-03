@@ -1,0 +1,25 @@
+# Render blueprint: New + > Blueprint > pick this repo. Fill the "sync: false" values in the dashboard.
+services:
+  - type: web
+    name: signature-stories-api
+    runtime: node
+    rootDir: server
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: CLIENT_ORIGINS
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ADMIN_EMAIL
+        value: bengalisongaf@gmail.com
+      - key: NOTIFY_EMAIL
+        value: bengalisongaf@gmail.com
+      - key: NODE_VERSION
+        value: "22"

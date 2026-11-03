@@ -7,7 +7,6 @@ const STATUS = { new: "New", contacted: "Contacted", booked: "Booked", closed: "
 const fmt = (d) => new Date(d).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
 
 function Login({ onDone }) {
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
@@ -15,7 +14,7 @@ function Login({ onDone }) {
     e.preventDefault();
     setBusy(true); setErr("");
     try {
-      const r = await adminApi.login(email, password);
+      const r = await adminApi.login(password);
       setToken(r.token);
       onDone(r.admin);
     } catch (x) { setErr(x.message); } finally { setBusy(false); }
@@ -25,8 +24,7 @@ function Login({ onDone }) {
       <form className="adm-card" onSubmit={submit}>
         <img src="/assests/logo.png" alt="Signature Stories" />
         <h1>Admin sign in</h1>
-        <input type="email" placeholder="Email" autoComplete="username" required value={email} onChange={(e) => setEmail(e.target.value)} />
-        <input type="password" placeholder="Password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+        <input type="password" placeholder="Admin password" autoComplete="current-password" autoFocus required value={password} onChange={(e) => setPassword(e.target.value)} />
         {err && <p className="adm-err" role="alert">{err}</p>}
         <button className="adm-btn" disabled={busy}>{busy ? "Signing in…" : "Sign in"}</button>
         <a className="adm-back" href="#/home">← Back to website</a>

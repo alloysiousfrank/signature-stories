@@ -36,7 +36,7 @@ export const publicApi = {
 };
 
 export const adminApi = {
-  login: (email, password) => request("/api/auth/login", { method: "POST", body: { email, password } }),
+  login: (password) => request("/api/auth/login", { method: "POST", body: { password } }),
   me: () => request("/api/auth/me", { auth: true }),
   changePassword: (currentPassword, newPassword) =>
     request("/api/auth/change-password", { method: "POST", auth: true, body: { currentPassword, newPassword } }),

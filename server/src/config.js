@@ -11,6 +11,8 @@ export function loadEnv(src = process.env) {
     resendKey: src.RESEND_API_KEY || "",
     notifyEmail: src.NOTIFY_EMAIL || "bengalisongaf@gmail.com",
     mailFrom: src.MAIL_FROM || "Signature Stories <onboarding@resend.dev>",
+    adminEmail: (src.ADMIN_EMAIL || "bengalisongaf@gmail.com").toLowerCase(),
+    adminPassword: src.ADMIN_PASSWORD || "",
     nodeEnv: src.NODE_ENV || "development",
   };
 }
