@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { adminApi, getToken, setToken } from "../api.js";
+import { BUSINESS } from "../config.js";
 import { EVENT_TYPES } from "../content.js";
 import CalendarView from "./Calendar.jsx";
 import Consultations from "./Consultations.jsx";
@@ -216,7 +217,7 @@ function Inquiries() {
   );
 }
 
-function Settings({ admin }) {
+function Settings() {
   const [cur, setCur] = useState("");
   const [next, setNext] = useState("");
   const [msg, setMsg] = useState({ ok: false, text: "" });
@@ -232,7 +233,7 @@ function Settings({ admin }) {
       <h1>Settings</h1>
       <form className="adm-card adm-form" onSubmit={submit}>
         <h2>Change password</h2>
-        <p className="adm-muted">Signed in as {admin.email}</p>
+        <p className="adm-muted">Hi, {FIRST_NAME}. Choose a new password below.</p>
         <input type="password" placeholder="Current password" autoComplete="current-password" required value={cur} onChange={(e) => setCur(e.target.value)} />
         <input type="password" placeholder="New password (10+ characters)" autoComplete="new-password" minLength={10} required value={next} onChange={(e) => setNext(e.target.value)} />
         {msg.text && <p className={msg.ok ? "adm-ok" : "adm-err"} role="status">{msg.text}</p>}
@@ -241,6 +242,8 @@ function Settings({ admin }) {
     </>
   );
 }
+
+const FIRST_NAME = BUSINESS.owner.split(" ")[0];
 
 const NAV = [
   ["dashboard", "Dashboard"], ["inquiries", "Enquiries"], ["calendar", "Calendar"], ["consultations", "Consultations"],
@@ -259,6 +262,14 @@ export default function Admin({ sub, query }) {
   useEffect(() => { setMenu(false); }, [sub]);
   useEffect(() => { document.title = "Admin · Signature Stories"; }, []);
 
+  // The mobile menu closes on Escape and when tapping outside it.
+  useEffect(() => {
+    if (!menu) return undefined;
+    const onKey = (e) => { if (e.key === "Escape") setMenu(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [menu]);
+
   const signedIn = !!admin && !!getToken();
   useEffect(() => {
     if (checking) return;
@@ -271,18 +282,24 @@ export default function Admin({ sub, query }) {
 
   const logout = () => { setToken(""); setAdmin(null); window.location.hash = "#/admin/login"; };
   return (
-    <div className="adm-root">
-      <aside className={`adm-side ${menu ? "open" : ""}`}>
-        <img src="/assests/logo.png" alt="Signature Stories" />
+    <div className={`adm-root ${menu ? "menu-open" : ""}`}>
+      <div className={`adm-backdrop ${menu ? "show" : ""}`} onClick={() => setMenu(false)} aria-hidden="true" />
+      <aside id="adm-nav" className={`adm-side ${menu ? "open" : ""}`} aria-label="Admin menu">
+        <img className="adm-logo" src="/assests/logo.png" alt="Signature Stories" />
         <nav>
-          {NAV.map(([k, l]) => <a key={k} href={`#/admin/${k}`} className={sub === k ? "active" : ""}>{l}</a>)}
+          {NAV.map(([k, l], i) => (
+            <a key={k} href={`#/admin/${k}`} className={sub === k ? "active" : ""} style={{ "--i": i }} onClick={() => setMenu(false)}>{l}</a>
+          ))}
         </nav>
         <button className="adm-btn adm-ghost" onClick={logout}>Log out</button>
       </aside>
       <main className="adm-main">
         <div className="adm-topbar">
-          <button className="adm-burger" onClick={() => setMenu(!menu)} aria-label="Menu">☰</button>
-          <span className="adm-who">{admin.email}</span>
+          <button className={`adm-burger ${menu ? "is-open" : ""}`} onClick={() => setMenu(!menu)}
+            aria-label={menu ? "Close menu" : "Open menu"} aria-expanded={menu} aria-controls="adm-nav">
+            <span /><span /><span />
+          </button>
+          <span className="adm-who">Hi, {FIRST_NAME}</span>
           <button className="adm-btn adm-ghost dark" onClick={logout}>Log out</button>
         </div>
         {sub === "dashboard" && <Dashboard />}
@@ -292,7 +309,7 @@ export default function Admin({ sub, query }) {
         {sub === "quotations" && <Documents kind="quotation" query={query} />}
         {sub === "invoices" && <Documents kind="invoice" query={query} />}
         {sub === "reports" && <Reports />}
-        {sub === "settings" && <Settings admin={admin} />}
+        {sub === "settings" && <Settings />}
       </main>
     </div>
   );
