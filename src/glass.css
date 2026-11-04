@@ -204,3 +204,8 @@ h1, h2, h3, .event-card strong, .package h3 { font-family: "Cormorant Garamond",
 .site-footer a, .contact-details p a { font-weight: 500; border-bottom: 1px solid rgba(185,154,85,.55); padding-bottom: 1px; transition: color .25s ease, border-color .25s ease; }
 .site-footer a:hover, .contact-details p a:hover { color: var(--gold-3); border-bottom-color: var(--gold-3); }
 .site-footer .footer-fine a { color: var(--gold-3); }
+
+.form-note { margin: 0; font-size: .92rem; opacity: .8; }
+.alt-send { margin-top: .6rem; text-align: center; }
+.alt-send .form-actions { display: flex; gap: .6rem; justify-content: center; flex-wrap: wrap; }
+.alt-send .ghost-link { margin-top: 0; }

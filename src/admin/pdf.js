@@ -3,7 +3,7 @@
    Fonts: Cinzel (headings) and Cormorant Garamond (text), both SIL OFL;
    they include the rupee sign. */
 import { BUSINESS } from "../config.js";
-import { computeTotals } from "./shared.js";
+import { computeTotals, paymentSchedule } from "./shared.js";
 
 const GOLD = [185, 154, 85], GOLD_DARK = [139, 111, 51], INK = [36, 32, 25], IVORY = [245, 240, 223], MUTED = [122, 115, 95];
 const money = (n) => `\u20B9 ${new Intl.NumberFormat("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n || 0)}`;
@@ -94,8 +94,21 @@ export async function buildPdf(doc) {
     pdf.setTextColor(47, 107, 63); pdf.setFont("Cinzel", "normal"); pdf.setFontSize(18); pdf.text("PAID", M, y + 8);
   }
 
-  // payment QR (invoices) + notes
+  // payment schedule
   let ny = y + 22;
+  if (ny > H - 70) { pdf.addPage(); ny = 20; }
+  pdf.setFont("Cinzel", "normal"); pdf.setFontSize(8.5); pdf.setTextColor(...GOLD_DARK); pdf.text("PAYMENT PLAN", M, ny);
+  pdf.setFont("Cormorant", "normal"); pdf.setFontSize(11.5); pdf.setTextColor(...INK);
+  let py = ny + 6;
+  for (const r of paymentSchedule(t.total, doc.advancePercent)) {
+    pdf.text(`${r.label}  ·  ${r.when}`, M, py);
+    pdf.setFont("Cormorant", "bold"); pdf.text(money(r.amount), W - M, py, { align: "right" }); pdf.setFont("Cormorant", "normal");
+    py += 6;
+  }
+  if (doc.paymentTerms) { pdf.setFont("Cormorant", "italic"); pdf.text(pdf.splitTextToSize(doc.paymentTerms, W - 2 * M), M, py); py += 6; pdf.setFont("Cormorant", "normal"); }
+  ny = py + 4;
+
+  // payment QR (invoices) + notes
   if (isInv && doc.status !== "paid" && BUSINESS.upiId) {
     const upi = `upi://pay?pa=${encodeURIComponent(BUSINESS.upiId)}&pn=${encodeURIComponent(BUSINESS.short)}&am=${t.total.toFixed(2)}&cu=INR&tn=${encodeURIComponent(doc.number)}`;
     const qr = await QR.toDataURL(upi, { margin: 1, width: 300, color: { dark: "#242019", light: "#ffffff" } });

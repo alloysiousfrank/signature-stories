@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { adminApi } from "../api.js";
 import { EVENT_TYPES } from "../content.js";
 import DeleteButton from "./DeleteButton.jsx";
-import { computeTotals, DOC_STATUSES, fmtDay, inr, isoToday } from "./shared.js";
+import { computeTotals, DOC_STATUSES, fmtDay, inr, isoToday, paymentSchedule } from "./shared.js";
 
 const LINE_SUGGESTIONS = [
   "Planning and coordination fee", "Venue décor and styling", "Stage and backdrop design", "Floral design",
@@ -16,7 +16,7 @@ const blank = (kind) => {
   const issueDate = isoToday();
   return {
     kind, status: "draft", client: { name: "", email: "", phone: "", address: "" }, eventType: "", eventDate: "", venue: "",
-    items: [{ description: "", qty: 1, rate: 0 }], gstPercent: 18, discount: 0, issueDate,
+    items: [{ description: "", qty: 1, rate: 0 }], gstPercent: 18, discount: 0, advancePercent: 50, paymentTerms: "", issueDate,
     dueDate: addDays(issueDate, kind === "invoice" ? 7 : 15), notes: "", inquiryId: "",
   };
 };
@@ -34,7 +34,7 @@ function Editor({ initial, onBack, onSaved }) {
 
   const payload = () => ({
     ...f, items: f.items.filter((i) => i.description.trim()).map((i) => ({ ...i, qty: Number(i.qty), rate: Number(i.rate) })),
-    gstPercent: Number(f.gstPercent), discount: Number(f.discount),
+    gstPercent: Number(f.gstPercent), discount: Number(f.discount), advancePercent: Number(f.advancePercent),
   });
 
   const save = async () => {
@@ -62,6 +62,14 @@ function Editor({ initial, onBack, onSaved }) {
       const r = await adminApi.sendDoc(saved.id, await pdfBase64(saved));
       setF(r.document); setMsg(`Sent to ${saved.client.email}.`); onSaved();
     } catch (e) { setErr(e.message); } finally { setBusy(false); }
+  };
+  const waLink = () => {
+    const digits = (f.client.phone || "").replace(/\D/g, "");
+    if (!digits) return "";
+    const num = digits.length === 10 ? `91${digits}` : digits;
+    const text = `Hello ${f.client.name}, your ${f.kind} ${f.number || ""} for your ${f.eventType || "event"} is ready. Total: ${inr(t.total)}.` +
+      ` Advance on confirmation: ${inr(paymentSchedule(t.total, f.advancePercent)[0].amount)}. We have also emailed you the PDF. Thank you — Signature Stories`;
+    return `https://wa.me/${num}?text=${encodeURIComponent(text)}`;
   };
   const convert = async () => {
     try { const inv = await adminApi.convertDoc(f.id); onSaved(); onBack(inv); } catch (e) { setErr(e.message); }
@@ -121,6 +129,17 @@ function Editor({ initial, onBack, onSaved }) {
           </dl>
         </div>
 
+        <h2>Payment plan</h2>
+        <div className="adm-grid3">
+          <label className="adm-label">Advance on confirmation (%)<input type="number" min="0" max="100" value={f.advancePercent} onChange={set("advancePercent")} /></label>
+          <label className="adm-label" style={{ gridColumn: "span 2" }}>Payment terms (shown on the PDF)
+            <input value={f.paymentTerms} onChange={set("paymentTerms")} placeholder="e.g. Balance due 7 days before the event. UPI or bank transfer." />
+          </label>
+        </div>
+        <ul className="adm-agenda">
+          {paymentSchedule(t.total, f.advancePercent).map((r) => <li key={r.label}><b>{r.label}</b> {inr(r.amount)}<small>{r.when}</small></li>)}
+        </ul>
+
         <label className="adm-label">{isInv ? "Notes" : "Terms and notes"}
           <textarea rows="3" value={f.notes} onChange={set("notes")} placeholder="Shown at the bottom of the PDF" />
         </label>
@@ -130,6 +149,7 @@ function Editor({ initial, onBack, onSaved }) {
           <button className="adm-btn" onClick={save} disabled={busy || !f.client.name.trim()}>{f.id ? "Save changes" : "Create"}</button>
           <button className="adm-btn" onClick={pdf} disabled={busy || !f.client.name.trim()}>Save & download PDF</button>
           <button className="adm-btn" title="Saves and emails the PDF to the client" onClick={email} disabled={busy || !f.client.name.trim() || !f.client.email.trim()}>Email to client</button>
+          {f.id && waLink() && <a className="adm-btn adm-ghost dark" href={waLink()} target="_blank" rel="noreferrer">Message on WhatsApp</a>}
           {f.id && f.kind === "quotation" && <button className="adm-btn" onClick={convert}>Convert to invoice</button>}
           {f.id && <DeleteButton what={f.number} onConfirm={async () => { try { await adminApi.removeDoc(f.id); onSaved(); onBack(); } catch (e) { setErr(e.message); } }} />}
         </div>
@@ -161,7 +181,10 @@ export default function Documents({ kind, query }) {
       setView({
         ...b, inquiryId: q.id, eventType: q.eventType, eventDate: q.eventDate || "",
         client: { name: q.name, email: q.email, phone: q.phone || "", address: "" },
-        items: [{ description: `${q.eventType} planning${q.packageName ? ` — ${q.packageName} package` : ""}`, qty: 1, rate: 0 }],
+        venue: q.venue || "",
+        items: q.services?.length
+          ? q.services.map((sv) => ({ description: sv, qty: 1, rate: 0 }))
+          : [{ description: `${q.eventType} planning${q.packageName ? ` — ${q.packageName} package` : ""}`, qty: 1, rate: 0 }],
       });
     }).catch((e) => setErr(e.message));
     window.history.replaceState(null, "", `#/admin/${kind === "invoice" ? "invoices" : "quotations"}`);

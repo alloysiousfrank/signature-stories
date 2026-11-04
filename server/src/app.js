@@ -22,6 +22,9 @@ const inquirySchema = z.object({
   eventDate: z.string().trim().max(20).optional().default(""),
   guests: z.coerce.number().int().min(0).max(100000).optional().default(0),
   packageName: z.string().trim().max(80).optional().default(""),
+  kind: z.enum(["enquiry", "quote"]).optional().default("enquiry"),
+  services: z.array(z.string().trim().min(1).max(60)).max(20).optional().default([]),
+  venue: z.string().trim().max(200).optional().default(""),
   budget: z.coerce.number().min(0).max(1e9).optional().default(0),
   estimate: z.string().trim().max(80).optional().default(""),
   message: z.string().trim().max(4000).optional().default(""),
@@ -61,6 +64,8 @@ const docSchema = z.object({
   discount: z.coerce.number().min(0).optional().default(0),
   issueDate: z.string().refine(isIsoDate),
   dueDate: isoOrEmpty.optional().default(""),
+  advancePercent: z.coerce.number().min(0).max(100).optional().default(50),
+  paymentTerms: z.string().trim().max(1000).optional().default(""),
   notes: z.string().trim().max(2000).optional().default(""),
   inquiryId: z.string().max(40).optional().default(""),
 });
@@ -79,7 +84,8 @@ export function createApp({ env, inquiryRepo, adminRepo, consultRepo, docRepo, f
   app.use(helmet());
   app.use(cors({
     origin(origin, cb) {
-      if (!origin || env.clientOrigins.includes(origin)) return cb(null, true);
+      // Auth is by bearer token (no cookies), so also accept this project's own Vercel preview URLs.
+      if (!origin || env.clientOrigins.includes(origin) || /^https:\/\/signature-stories[a-z0-9-]*\.vercel\.app$/.test(origin)) return cb(null, true);
       cb(null, false);
     },
   }));
@@ -162,7 +168,7 @@ export function createApp({ env, inquiryRepo, adminRepo, consultRepo, docRepo, f
 
 
   app.get("/api/admin/inquiries/export.csv", auth, wrap(async (req, res) => {
-    const rows = await inquiryRepo.all({ status: req.query.status, eventType: req.query.eventType, q: req.query.q });
+    const rows = await inquiryRepo.all({ status: req.query.status, eventType: req.query.eventType, kind: req.query.kind, q: req.query.q });
     res.setHeader("Content-Type", "text/csv; charset=utf-8");
     res.setHeader("Content-Disposition", 'attachment; filename="enquiries.csv"');
     res.send(inquiriesToCsv(rows));
@@ -172,7 +178,7 @@ export function createApp({ env, inquiryRepo, adminRepo, consultRepo, docRepo, f
     const page = Math.max(1, parseInt(req.query.page, 10) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 20));
     const { items, total } = await inquiryRepo.list(
-      { status: req.query.status, eventType: req.query.eventType, q: req.query.q }, { page, limit });
+      { status: req.query.status, eventType: req.query.eventType, kind: req.query.kind, q: req.query.q }, { page, limit });
     res.json({ items, total, page, pages: Math.max(1, Math.ceil(total / limit)) });
   }));
 

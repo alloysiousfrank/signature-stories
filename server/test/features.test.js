@@ -79,3 +79,31 @@ test("documents: create, number, totals, status, convert, delete", async () => {
   assert.equal((await request(app).delete(`/api/admin/documents/${inv.id}`).set(h)).status, 200);
   assert.equal((await request(app).post(`/api/admin/documents/${inv.id}/convert`).set(h)).status, 404);
 });
+
+test("quote requests: kind, services, filters, stats and cors hygiene", async () => {
+  const { app } = makeApp();
+  await request(app).post("/api/inquiries").send({ name: "Plain" });
+  await request(app).post("/api/inquiries").send({ name: "Quoter", kind: "quote", services: ["Florals", "Lighting & sound"], venue: "Tiruppur", eventType: "Wedding", eventDate: "2026-12-01" });
+  assert.equal((await request(app).post("/api/inquiries").send({ name: "Bad", kind: "weird" })).status, 400);
+  const h = { Authorization: `Bearer ${await login(app)}` };
+  const quotes = await request(app).get("/api/admin/inquiries?kind=quote").set(h);
+  assert.equal(quotes.body.total, 1);
+  assert.deepEqual(quotes.body.items[0].services, ["Florals", "Lighting & sound"]);
+  assert.equal((await request(app).get("/api/admin/inquiries?kind=enquiry").set(h)).body.total, 1);
+  const st = (await request(app).get("/api/admin/stats").set(h)).body;
+  assert.equal(st.newQuotes, 1);
+  assert.equal(st.latestNew.length, 2);
+  // trailing-slash origins and vercel previews are accepted
+  const pre = await request(app).options("/api/inquiries").set("Origin", "https://signature-stories-git-main-x.vercel.app").set("Access-Control-Request-Method", "POST");
+  assert.equal(pre.headers["access-control-allow-origin"], "https://signature-stories-git-main-x.vercel.app");
+  const evil = await request(app).options("/api/inquiries").set("Origin", "https://evil.example").set("Access-Control-Request-Method", "POST");
+  assert.equal(evil.headers["access-control-allow-origin"], undefined);
+});
+
+test("documents keep payment schedule fields", async () => {
+  const { app } = makeApp();
+  const h = { Authorization: `Bearer ${await login(app)}` };
+  const d = (await request(app).post("/api/admin/documents").set(h).send(doc({ advancePercent: 30, paymentTerms: "Balance 7 days before" }))).body;
+  assert.equal(d.advancePercent, 30);
+  assert.equal(d.paymentTerms, "Balance 7 days before");
+});

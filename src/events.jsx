@@ -67,6 +67,7 @@ export function EventDetail({ slug }) {
           <p className="hero-description">{ev.summary}</p>
           <div className="hero-actions">
             <a className="contact-link" href={enquire(ev.type)}>Enquire about {ev.title.toLowerCase()}</a>
+            <a className="ghost-link" href={`#/quote?event=${encodeURIComponent(ev.type)}`}>Get a quotation</a>
             <a
               className="ghost-link"
               href={`#/events/${ev.slug}`}

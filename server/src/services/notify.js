@@ -3,17 +3,17 @@
 export async function notifyNewInquiry(env, inq, fetchImpl = fetch) {
   if (!env.resendKey) return false;
   const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-  const html = `<h2>New enquiry — Signature Stories</h2>
+  const html = `<h2>${inq.kind === "quote" ? "New quotation request" : "New enquiry"} — Signature Stories</h2>
 <p><b>${esc(inq.name)}</b> ${esc(inq.email)} ${esc(inq.phone)} ${inq.email || inq.phone ? "" : "(no contact details given)"}</p>
 <p>${esc(inq.eventType)} · ${esc(inq.eventDate) || "date TBC"} · ${esc(inq.guests)} guests${inq.packageName ? ` · ${esc(inq.packageName)}` : ""}</p>
-<p style="white-space:pre-wrap">${esc(inq.message)}</p>`;
+${(inq.services || []).length ? `<p>Services: ${esc(inq.services.join(", "))}</p>` : ""}${inq.venue ? `<p>Venue: ${esc(inq.venue)}</p>` : ""}<p style="white-space:pre-wrap">${esc(inq.message)}</p>`;
   try {
     const res = await fetchImpl("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${env.resendKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         from: env.mailFrom, to: [env.notifyEmail], ...(inq.email ? { reply_to: inq.email } : {}),
-        subject: `New enquiry: ${inq.name} (${inq.eventType})`, html,
+        subject: `${inq.kind === "quote" ? "Quotation request" : "New enquiry"}: ${inq.name} (${inq.eventType})`, html,
       }),
     });
     return res.ok;

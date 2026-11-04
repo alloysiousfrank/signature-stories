@@ -67,3 +67,10 @@ Free Render services sleep after ~15 minutes without traffic and take up to a mi
 3. Recommended: add a free monitor at uptimerobot.com for `https://<render-url>/api/health` with a 5-minute interval. For guaranteed always-on hosting, switch the Render service to a paid plan.
 
 `/api/health` returns `{"ok":true,"db":true}` when the database is connected; `db:false` means check `MONGODB_URI` and Atlas Network Access.
+
+## Enquiries, quotation requests and alerts
+
+- **Send enquiry** always saves to the database first, so it appears in Admin → Enquiries. If the server is asleep the form waits and retries automatically (up to about a minute); it never reports success unless the server confirmed it. **Send on WhatsApp** and **Send by email** are separate buttons that open WhatsApp / the mail app directly and do not touch the database.
+- **Get a quotation** (`#/quote`): customers pick services, event details and budget. It arrives in the admin as a *quotation request*.
+- **Admin alerts** (polled every 20 s while the panel is open): a red badge on Enquiries, a toast for each new enquiry, and a pop-up for each new quotation request with a **Prepare quotation** button that opens the quotation editor pre-filled (client, event, venue, services as line items). Fix the charges and the payment plan (advance % + terms), then **Save & download PDF** or **Email to client**; **Message on WhatsApp** opens a prefilled chat.
+- **Server CORS** now ignores trailing slashes in `CLIENT_ORIGINS` and also accepts `https://signature-stories*.vercel.app` preview URLs.

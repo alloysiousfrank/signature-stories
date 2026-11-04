@@ -1,6 +1,7 @@
 import "dotenv/config";
 
-const list = (v) => (v || "").split(",").map((s) => s.trim()).filter(Boolean);
+// Origins are compared exactly, so drop trailing slashes people often paste (https://x.vercel.app/).
+const list = (v) => (v || "").split(",").map((s) => s.trim().replace(/\/+$/, "")).filter(Boolean);
 
 export function loadEnv(src = process.env) {
   return {

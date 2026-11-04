@@ -7,6 +7,7 @@ import "./luxury.css";
 import "./glass.css";
 import { EventDetail, Events } from "./events.jsx";
 import { Consult } from "./consult.jsx";
+import { Quote } from "./quote.jsx";
 import { BUSINESS, WHATSAPP_NUMBER } from "./config.js";
 import { About, Contact, Gallery, Home, Services } from "./pages.jsx";
 import { LuxuryLayer } from "./ui.jsx";
@@ -46,7 +47,7 @@ function parseHash() {
   const raw = window.location.hash.replace(/^#\/?/, "");
   const [path, qs = ""] = raw.split("?");
   const [page, param = ""] = path.split("/");
-  const known = [...PAGES, "consult", "admin"];
+  const known = [...PAGES, "consult", "quote", "admin"];
   return { page: known.includes(page) ? page : "home", param, query: new URLSearchParams(qs) };
 }
 
@@ -189,7 +190,7 @@ function Footer() {
         {BUSINESS.address} · <a href={`tel:${BUSINESS.phone.replace(/\s/g, "")}`}>{BUSINESS.phone}</a>
       </p>
       <p className="footer-fine">
-        <a href="#/consult">Book a consultation</a> · Sample photos and video via{" "}
+        <a href="#/quote">Get a quotation</a> · <a href="#/consult">Book a consultation</a> · Sample photos and video via{" "}
         <a href="https://www.pexels.com" target="_blank" rel="noreferrer">Pexels</a>
       </p>
     </footer>
@@ -229,6 +230,7 @@ export default function App() {
           {page === "events" && (param ? <EventDetail slug={param} /> : <Events />)}
           {page === "gallery" && <Gallery />}
           {page === "consult" && <Consult />}
+          {page === "quote" && <Quote key={query.toString()} query={query} />}
           {page === "contact" && <Contact key={query.toString()} query={query} />}
         </main>
         <Footer />

@@ -17,7 +17,7 @@ export function fakeRepos() {
     async addNote(id, note) { const r = inq.find((d) => d.id === id); if (r) r.notes.push(note); return r || null; },
     async remove(id) { const i = inq.findIndex((d) => d.id === id); if (i < 0) return false; inq.splice(i, 1); return true; },
     async byEventMonth(m) { return inq.filter((d) => (d.eventDate || "").startsWith(m) && d.status !== "closed"); },
-    async stats() { return { total: inq.length, last30: inq.length, status: { new: inq.filter((d) => d.status === "new").length, contacted: 0, booked: 0, closed: 0 }, byType: [] }; },
+    async stats() { return { latestNew: inq.filter((d) => d.status === "new").slice(0, 5), newQuotes: inq.filter((d) => d.status === "new" && d.kind === "quote").length, total: inq.length, last30: inq.length, status: { new: inq.filter((d) => d.status === "new").length, contacted: 0, booked: 0, closed: 0 }, byType: [] }; },
   };
   const adminRepo = {
     async findByEmail(e) { return admins.find((a) => a.email === e.toLowerCase()) || null; },

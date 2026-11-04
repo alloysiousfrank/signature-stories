@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { adminApi, getToken, setToken } from "../api.js";
 import { BUSINESS } from "../config.js";
 import { EVENT_TYPES } from "../content.js";
+import { AlertLayer, useInbox } from "./Alerts.jsx";
 import CalendarView from "./Calendar.jsx";
 import Consultations from "./Consultations.jsx";
 import Documents from "./Documents.jsx";
@@ -106,7 +107,10 @@ function Detail({ item, onChange, onDeleted, onClose }) {
       <dl>
         <dt>Email</dt><dd>{item.email ? <a href={`mailto:${item.email}`}>{item.email}</a> : "Not given"}</dd>
         {item.phone && <><dt>Phone</dt><dd><a href={`tel:${item.phone}`}>{item.phone}</a></dd></>}
+        <dt>Type</dt><dd>{item.kind === "quote" ? "Quotation request" : "Enquiry"}</dd>
         <dt>Event</dt><dd>{item.eventType}{item.packageName ? ` · ${item.packageName}` : ""}</dd>
+        {item.venue && <><dt>Venue</dt><dd>{item.venue}</dd></>}
+        {item.services?.length > 0 && <><dt>Services</dt><dd>{item.services.join(", ")}</dd></>}
         <dt>Date</dt><dd>{item.eventDate || "Not set"}</dd>
         <dt>Guests</dt><dd>{item.guests || "—"}</dd>
         {item.budget > 0 && <><dt>Budget</dt><dd>{inr(item.budget)}{item.estimate ? ` (est. ${item.estimate})` : ""}</dd></>}
@@ -127,14 +131,14 @@ function Detail({ item, onChange, onDeleted, onClose }) {
         <button className="adm-btn">Add</button>
       </form>
       {err && <p className="adm-err" role="alert">{err}</p>}
-      <a className="adm-btn" href={`#/admin/quotations?inquiry=${item.id}`}>Create quotation</a>{" "}
+      <a className="adm-btn" href={`#/admin/quotations?inquiry=${item.id}`}>{item.kind === "quote" ? "Prepare quotation" : "Create quotation"}</a>{" "}
       <DeleteButton what="this enquiry" label="Delete enquiry" onConfirm={del} />
     </aside>
   );
 }
 
 function Inquiries() {
-  const [filters, setFilters] = useState({ q: "", status: "", eventType: "" });
+  const [filters, setFilters] = useState({ q: "", status: "", eventType: "", kind: "" });
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
   const [data, setData] = useState({ items: [], total: 0, pages: 1 });
@@ -143,14 +147,16 @@ function Inquiries() {
   const [err, setErr] = useState("");
 
   const params = useCallback(() => Object.fromEntries(Object.entries(filters).filter(([, v]) => v)), [filters]);
-  const load = useCallback(() => {
-    setLoading(true);
+  const load = useCallback((quiet) => {
+    if (!quiet) setLoading(true);
     adminApi.list({ ...params(), page, limit: 15 })
       .then((d) => { setData(d); setErr(""); })
       .catch((e) => setErr(e.message))
       .finally(() => setLoading(false));
   }, [params, page]);
   useEffect(() => { load(); }, [load]);
+  // New enquiries appear on their own: refresh quietly every 20 seconds.
+  useEffect(() => { const t = setInterval(() => load(true), 20000); return () => clearInterval(t); }, [load]);
   useEffect(() => { const t = setTimeout(() => { setPage(1); setFilters((f) => ({ ...f, q })); }, 300); return () => clearTimeout(t); }, [q]);
 
   // Delete on the server first, then reload from the database so the list reflects what is really stored.
@@ -165,13 +171,19 @@ function Inquiries() {
     <>
       <div className="adm-head">
         <h1>Enquiries <small>{data.total}</small></h1>
-        <button className="adm-btn" onClick={() => adminApi.exportCsv(params()).catch((e) => setErr(e.message))}>Export CSV</button>
+        <span className="adm-actions"><button className="adm-btn adm-ghost dark" onClick={() => load()}>Refresh</button>
+        <button className="adm-btn" onClick={() => adminApi.exportCsv(params()).catch((e) => setErr(e.message))}>Export CSV</button></span>
       </div>
       <div className="adm-filters">
         <input type="search" placeholder="Search name, email, phone, message…" value={q} onChange={(e) => setQ(e.target.value)} />
         <select value={filters.status} onChange={setF("status")} aria-label="Status">
           <option value="">All statuses</option>
           {Object.entries(STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+        </select>
+        <select value={filters.kind} onChange={setF("kind")} aria-label="Kind">
+          <option value="">Enquiries and quotation requests</option>
+          <option value="enquiry">Enquiries only</option>
+          <option value="quote">Quotation requests only</option>
         </select>
         <select value={filters.eventType} onChange={setF("eventType")} aria-label="Event type">
           <option value="">All events</option>
@@ -188,7 +200,7 @@ function Inquiries() {
                 <tr key={it.id} className={sel?.id === it.id ? "on" : ""} onClick={() => setSel(it)} tabIndex={0}
                     onKeyDown={(e) => e.key === "Enter" && setSel(it)}>
                   <td>{fmt(it.createdAt)}</td>
-                  <td><b>{it.name}</b><small>{it.email}</small></td>
+                  <td><b>{it.name}</b>{it.kind === "quote" && <span className="adm-pill s-quote">Quotation request</span>}<small>{it.email}</small></td>
                   <td>{it.eventType}</td>
                   <td><span className={`adm-pill s-${it.status}`}>{STATUS[it.status]}</span></td>
                   <td><DeleteButton small what="it" onConfirm={() => removeRow(it.id)} /></td>
@@ -250,17 +262,10 @@ const NAV = [
   ["quotations", "Quotations"], ["invoices", "Invoices"], ["reports", "Reports"], ["settings", "Settings"],
 ];
 
-export default function Admin({ sub, query }) {
-  const [admin, setAdmin] = useState(null);
-  const [checking, setChecking] = useState(!!getToken());
+function Panel({ sub, query, onLogout }) {
   const [menu, setMenu] = useState(false);
-
-  useEffect(() => {
-    if (!getToken()) return;
-    adminApi.me().then((r) => setAdmin(r.admin)).catch(() => {}).finally(() => setChecking(false));
-  }, []);
+  const inbox = useInbox();
   useEffect(() => { setMenu(false); }, [sub]);
-  useEffect(() => { document.title = "Admin · Signature Stories"; }, []);
 
   // The mobile menu closes on Escape and when tapping outside it.
   useEffect(() => {
@@ -269,6 +274,53 @@ export default function Admin({ sub, query }) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [menu]);
+  useEffect(() => { document.title = "Admin · Signature Stories"; }, []);
+
+  return (
+    <div className={`adm-root ${menu ? "menu-open" : ""}`}>
+      <div className={`adm-backdrop ${menu ? "show" : ""}`} onClick={() => setMenu(false)} aria-hidden="true" />
+      <aside id="adm-nav" className={`adm-side ${menu ? "open" : ""}`} aria-label="Admin menu">
+        <img className="adm-logo" src="/assests/logo.png" alt="Signature Stories" />
+        <nav>
+          {NAV.map(([k, l], i) => (
+            <a key={k} href={`#/admin/${k}`} className={sub === k ? "active" : ""} style={{ "--i": i }} onClick={() => setMenu(false)}>
+              {l}{k === "inquiries" && inbox.newCount > 0 && <span className="adm-badge">{inbox.newCount}</span>}
+            </a>
+          ))}
+        </nav>
+        <button className="adm-btn adm-ghost" onClick={onLogout}>Log out</button>
+      </aside>
+      <main className="adm-main">
+        <div className="adm-topbar">
+          <button className={`adm-burger ${menu ? "is-open" : ""}`} onClick={() => setMenu(!menu)}
+            aria-label={menu ? "Close menu" : "Open menu"} aria-expanded={menu} aria-controls="adm-nav">
+            <span /><span /><span />
+          </button>
+          <span className="adm-who">Hi, {FIRST_NAME}</span>
+          <button className="adm-btn adm-ghost dark" onClick={onLogout}>Log out</button>
+        </div>
+        {sub === "dashboard" && <Dashboard />}
+        {sub === "inquiries" && <Inquiries />}
+        {sub === "calendar" && <CalendarView />}
+        {sub === "consultations" && <Consultations />}
+        {sub === "quotations" && <Documents kind="quotation" query={query} />}
+        {sub === "invoices" && <Documents kind="invoice" query={query} />}
+        {sub === "reports" && <Reports />}
+        {sub === "settings" && <Settings />}
+      </main>
+      <AlertLayer inbox={inbox} />
+    </div>
+  );
+}
+
+export default function Admin({ sub, query }) {
+  const [admin, setAdmin] = useState(null);
+  const [checking, setChecking] = useState(!!getToken());
+
+  useEffect(() => {
+    if (!getToken()) return;
+    adminApi.me().then((r) => setAdmin(r.admin)).catch(() => {}).finally(() => setChecking(false));
+  }, []);
 
   const signedIn = !!admin && !!getToken();
   useEffect(() => {
@@ -281,36 +333,5 @@ export default function Admin({ sub, query }) {
   if (!signedIn) return <div className="adm-root"><Login onDone={(a) => { setAdmin(a); window.location.hash = "#/admin/dashboard"; }} /></div>;
 
   const logout = () => { setToken(""); setAdmin(null); window.location.hash = "#/admin/login"; };
-  return (
-    <div className={`adm-root ${menu ? "menu-open" : ""}`}>
-      <div className={`adm-backdrop ${menu ? "show" : ""}`} onClick={() => setMenu(false)} aria-hidden="true" />
-      <aside id="adm-nav" className={`adm-side ${menu ? "open" : ""}`} aria-label="Admin menu">
-        <img className="adm-logo" src="/assests/logo.png" alt="Signature Stories" />
-        <nav>
-          {NAV.map(([k, l], i) => (
-            <a key={k} href={`#/admin/${k}`} className={sub === k ? "active" : ""} style={{ "--i": i }} onClick={() => setMenu(false)}>{l}</a>
-          ))}
-        </nav>
-        <button className="adm-btn adm-ghost" onClick={logout}>Log out</button>
-      </aside>
-      <main className="adm-main">
-        <div className="adm-topbar">
-          <button className={`adm-burger ${menu ? "is-open" : ""}`} onClick={() => setMenu(!menu)}
-            aria-label={menu ? "Close menu" : "Open menu"} aria-expanded={menu} aria-controls="adm-nav">
-            <span /><span /><span />
-          </button>
-          <span className="adm-who">Hi, {FIRST_NAME}</span>
-          <button className="adm-btn adm-ghost dark" onClick={logout}>Log out</button>
-        </div>
-        {sub === "dashboard" && <Dashboard />}
-        {sub === "inquiries" && <Inquiries />}
-        {sub === "calendar" && <CalendarView />}
-        {sub === "consultations" && <Consultations />}
-        {sub === "quotations" && <Documents kind="quotation" query={query} />}
-        {sub === "invoices" && <Documents kind="invoice" query={query} />}
-        {sub === "reports" && <Reports />}
-        {sub === "settings" && <Settings />}
-      </main>
-    </div>
-  );
+  return <Panel sub={sub} query={query} onLogout={logout} />;
 }

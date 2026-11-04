@@ -28,7 +28,7 @@
 .adm-bar{display:grid;grid-template-columns:110px 1fr 30px;gap:.6rem;align-items:center;margin:.4rem 0;font-size:.9rem}
 .adm-bar i{height:10px;background:#e8e1c9;border-radius:99px;overflow:hidden}.adm-bar b{display:block;height:100%;background:linear-gradient(90deg,#b99a55,#8b6f33)}
 .adm-head{display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap}
-.adm-filters{display:grid;grid-template-columns:2fr 1fr 1fr;gap:.6rem;margin:.6rem 0 1rem}
+.adm-filters{display:grid;grid-template-columns:2fr 1.4fr 1fr 1fr;gap:.6rem;margin:.6rem 0 1rem}
 .adm-split{display:grid;gap:1rem;grid-template-columns:1fr}
 .adm-split.has-detail{grid-template-columns:minmax(0,1.4fr) minmax(300px,1fr);align-items:start}
 .adm-tablewrap{padding:.4rem;overflow-x:auto}
@@ -121,3 +121,18 @@
   .adm-root.menu-open{overflow:hidden}
 }
 @media (prefers-reduced-motion:reduce){.adm-side,.adm-backdrop,.adm-side nav a,.adm-burger span{transition:none !important}}
+
+.s-quote{background:#e6d9f2;margin-left:.4rem;font-size:.7rem}
+.adm-badge{display:inline-block;margin-left:.5rem;min-width:20px;padding:0 6px;border-radius:99px;background:#a1362b;color:#fff;font-size:.72rem;line-height:20px;text-align:center}
+.adm-toasts{position:fixed;right:16px;top:16px;z-index:60;display:grid;gap:.5rem;width:min(340px,calc(100vw - 32px))}
+.adm-toast{display:flex;align-items:center;gap:.6rem;background:#fffdf7;border:1px solid rgba(185,154,85,.5);border-left:4px solid #b99a55;border-radius:12px;padding:.7rem .8rem;box-shadow:0 12px 30px rgba(36,32,25,.2);animation:admIn .35s ease}
+.adm-toast div{flex:1;display:grid;font-size:.9rem}.adm-toast span{color:#7a735f;font-size:.82rem}
+.adm-modal-wrap{position:fixed;inset:0;z-index:80;display:grid;place-items:center;padding:1rem}
+.adm-modal-bg{position:absolute;inset:0;background:rgba(36,32,25,.55);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);animation:admFade .25s ease}
+.adm-modal{position:relative;width:min(480px,100%);max-height:90vh;overflow:auto;animation:admIn .35s cubic-bezier(.22,.8,.25,1)}
+.adm-modal dl{display:grid;grid-template-columns:80px 1fr;gap:.3rem .6rem;font-size:.92rem}.adm-modal dt{color:#7a735f}.adm-modal dd{margin:0}
+.adm-eyebrow{margin:0 0 .3rem;font-size:.72rem;letter-spacing:.18em;color:#8b6f33}
+@keyframes admIn{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes admFade{from{opacity:0}to{opacity:1}}
+@media (max-width:860px){.adm-filters{grid-template-columns:1fr}}
+.adm-modal{background:#fffdf7;-webkit-backdrop-filter:none;backdrop-filter:none}

@@ -42,6 +42,20 @@ async function request(path, { method = "GET", body, auth = false, raw = false }
 /* Free hosts put idle servers to sleep. Pinging as soon as the site opens wakes it before anyone needs it. */
 export const wakeServer = () => { fetch(`${BASE}/api/health`, { cache: "no-store" }).catch(() => {}); };
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/* A sleeping free-tier server answers 502/503 (or nothing) for up to a minute. Retry so the visitor's
+   submission is delivered once it is awake instead of being lost. */
+export async function withRetry(fn, { tries = 10, delay = 6000, onWait } = {}) {
+  for (let i = 0; ; i += 1) {
+    try { return await fn(); } catch (e) {
+      if (![0, 502, 503, 504].includes(e.status) || i >= tries - 1) throw e;
+      if (onWait) onWait(i + 1);
+      await sleep(delay);
+    }
+  }
+}
+
 export const publicApi = {
   submitInquiry: (payload) => request("/api/inquiries", { method: "POST", body: payload }),
   slots: (date) => request(`/api/consultations/slots?date=${encodeURIComponent(date)}`),

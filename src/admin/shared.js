@@ -17,3 +17,15 @@ export const DOC_STATUSES = {
   invoice: ["draft", "sent", "paid", "cancelled"],
   quotation: ["draft", "sent", "accepted", "declined"],
 };
+
+/* Payment plan: advance on confirmation, balance later. Mirrors the wording used on the PDF. */
+export function paymentSchedule(total, advancePercent) {
+  const pct = Math.min(100, Math.max(0, Number(advancePercent) || 0));
+  const advance = r2((total * pct) / 100);
+  if (pct >= 100) return [{ label: "Full payment (100%)", amount: total, when: "On confirmation" }];
+  if (pct <= 0) return [{ label: "Full payment", amount: total, when: "As per the payment terms" }];
+  return [
+    { label: `Advance (${pct}%)`, amount: advance, when: "On confirmation of the booking" },
+    { label: `Balance (${100 - pct}%)`, amount: r2(total - advance), when: "Before the event, as per the payment terms" },
+  ];
+}

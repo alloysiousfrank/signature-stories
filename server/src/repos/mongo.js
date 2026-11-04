@@ -29,15 +29,17 @@ export const mongoInquiryRepo = {
   },
   async stats() {
     const since = new Date(Date.now() - 30 * 864e5);
-    const [byStatus, byType, last30, total] = await Promise.all([
+    const [byStatus, byType, last30, total, latestNew, newQuotes] = await Promise.all([
       Inquiry.aggregate([{ $group: { _id: "$status", n: { $sum: 1 } } }]),
       Inquiry.aggregate([{ $group: { _id: "$eventType", n: { $sum: 1 } } }, { $sort: { n: -1 } }]),
       Inquiry.countDocuments({ createdAt: { $gte: since } }),
       Inquiry.countDocuments({}),
+      Inquiry.find({ status: "new" }).sort({ createdAt: -1 }).limit(5),
+      Inquiry.countDocuments({ status: "new", kind: "quote" }),
     ]);
     const status = Object.fromEntries(STATUSES.map((s) => [s, 0]));
     byStatus.forEach((r) => { if (r._id in status) status[r._id] = r.n; });
-    return { total, last30, status, byType: byType.map((r) => ({ type: r._id, count: r.n })) };
+    return { total, last30, status, newQuotes, latestNew: latestNew.map(json), byType: byType.map((r) => ({ type: r._id, count: r.n })) };
   },
 };
 

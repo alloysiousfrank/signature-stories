@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { publicApi } from "./api.js";
+import { publicApi, withRetry } from "./api.js";
 import { BUSINESS, CONTACT_EMAIL, SOCIALS, WHATSAPP_NUMBER } from "./config.js";
 import { REEL } from "./photos.js";
 import { estimate, inr, PACKAGE_LEVELS, verdict } from "./estimator.js";
@@ -211,8 +211,8 @@ function ContactForm({ query }) {
     pkg: query?.get("package") || "",
   });
   const [errMsg, setErrMsg] = useState("");
-  const [status, setStatus] = useState("idle"); // idle | sending | sent | error | manual
-  const [copied, setCopied] = useState(false);
+  const [status, setStatus] = useState("idle"); // idle | sending | sent | error
+  const [waking, setWaking] = useState(false);
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
   const [today] = useState(() => {
     const d = new Date();
@@ -231,29 +231,19 @@ function ContactForm({ query }) {
 
   const submit = async (e) => {
     e.preventDefault();
-    setStatus("sending"); setErrMsg("");
+    setStatus("sending"); setErrMsg(""); setWaking(false);
     try {
-      await publicApi.submitInquiry({
+      await withRetry(() => publicApi.submitInquiry({
         name: form.name, email: form.email, phone: form.phone, eventType: form.type,
         eventDate: form.date, guests: Number(form.guests), packageName: form.pkg,
         budget: Number(form.budget), estimate: `${inr(est.low)} – ${inr(est.high)}`,
         message: form.message, trap: form.trap,
-      });
+      }), { onWait: () => setWaking(true) });
       setStatus("sent");
     } catch (err) {
-      // Server unreachable, not deployed (404) or failing (5xx): never lose the enquiry — offer other ways to send it.
-      if (err.status === 0 || err.status === 404 || err.status >= 500) setStatus("manual");
-      else { setErrMsg(err.message); setStatus("error"); }
-    }
-  };
-
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(summary);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2200);
-    } catch {
-      setCopied(false);
+      // Never pretend it was sent: keep the form so nothing is lost, and point to the direct options.
+      setErrMsg(err.status === 0 ? "We could not reach our server." : err.message);
+      setStatus("error");
     }
   };
 
@@ -262,24 +252,7 @@ function ContactForm({ query }) {
       <div className="form-done" role="status">
         <Ornament />
         <h2>Thank you, {form.name.split(" ")[0] || "friend"}.</h2>
-        <p>Your enquiry has reached us. We will write back with warmth and care very soon.</p>
-      </div>
-    );
-  }
-
-  if (status === "manual") {
-    return (
-      <div className="form-done" role="status">
-        <Ornament />
-        <h2>Your enquiry is ready.</h2>
-        <p>Choose how you would like to send it to us.</p>
-        <pre className="summary">{summary}</pre>
-        <div className="form-actions">
-          {waHref && <a className="contact-link" href={waHref} target="_blank" rel="noreferrer">Send on WhatsApp</a>}
-          {mailHref && <a className="contact-link" href={mailHref}>Send by email</a>}
-          <button type="button" className="ghost-link" onClick={copy}>{copied ? "Copied ✓" : "Copy enquiry"}</button>
-          <button type="button" className="ghost-link" onClick={() => setStatus("idle")}>Edit details</button>
-        </div>
+        <p>Your enquiry has reached us and is saved with our team. We will write back with warmth and care very soon.</p>
       </div>
     );
   }
@@ -362,13 +335,24 @@ function ContactForm({ query }) {
       <textarea name="message" rows="4" placeholder="Tell us about your event — optional, share only what you like" value={form.message} onChange={set("message")} />
 
       <button className="contact-link" type="submit" disabled={status === "sending"}>
-        {status === "sending" ? "Sending…" : "Send enquiry"}
+        {status === "sending" ? (waking ? "Waking our server…" : "Sending…") : "Send enquiry"}
       </button>
+      {waking && status === "sending" && (
+        <p className="form-note" role="status">Our server was resting and is waking up. Please keep this page open, it will send in a few seconds.</p>
+      )}
       {status === "error" && (
         <p className="form-error" role="alert">
-          {errMsg || "That did not go through."} Please try again{waHref ? " or message us on WhatsApp" : ""}.
+          {errMsg} Your details are still here — please try again, or send them directly below.
         </p>
       )}
+
+      <div className="alt-send">
+        <p className="eyebrow">OR SEND IT DIRECTLY</p>
+        <div className="form-actions">
+          {waHref && <a className="ghost-link" href={waHref} target="_blank" rel="noreferrer">Send on WhatsApp</a>}
+          {mailHref && <a className="ghost-link" href={mailHref}>Send by email</a>}
+        </div>
+      </div>
     </form>
   );
 }
@@ -396,6 +380,7 @@ export function Contact({ query }) {
           <p><a className="text-link" href={`tel:${BUSINESS.phone.replace(/\s/g, "")}`}>{BUSINESS.phone}</a></p>
           <p className="contact-quick">
             {WHATSAPP_NUMBER && <a className="ghost-link" href={`https://wa.me/${WHATSAPP_NUMBER}`} target="_blank" rel="noreferrer">WhatsApp</a>}
+            <a className="ghost-link" href="#/quote">Get a quotation</a>
             <a className="ghost-link" href="#/consult">Book a consultation</a>
           </p>
         </div>
