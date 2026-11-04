@@ -136,3 +136,10 @@
 @keyframes admFade{from{opacity:0}to{opacity:1}}
 @media (max-width:860px){.adm-filters{grid-template-columns:1fr}}
 .adm-modal{background:#fffdf7;-webkit-backdrop-filter:none;backdrop-filter:none}
+
+/* payments panel + notification settings */
+.adm-pay{border-top:1px solid #e6dfc9;margin-top:1rem;padding-top:.5rem}
+.adm-paystat{display:flex;flex-wrap:wrap;gap:.5rem 1.4rem;margin:.2rem 0 .8rem}.adm-paystat .due b{color:#a2452b}.adm-paystat .clear b{color:#2f6b3f}
+.adm-agenda li{position:relative}.adm-agenda li .adm-x2{position:absolute;right:.5rem;top:.5rem}
+.adm-payform{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.5rem;margin-top:.7rem}
+.adm-check{display:flex;gap:.6rem;align-items:flex-start;margin:.8rem 0}.adm-check input{margin-top:.3rem}

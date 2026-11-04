@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { adminApi } from "../api.js";
+import { chime, listenForNavigation } from "./notify.js";
 
 const SEEN_KEY = "ss_seen_quotes";
 const readSeen = () => { try { return new Set(JSON.parse(localStorage.getItem(SEEN_KEY) || "[]")); } catch { return new Set(); } };
@@ -21,6 +22,7 @@ export function useInbox() {
     const latest = s.latestNew || [];
     const seen = readSeen();
     if (known.current) {
+      if (latest.some((i) => !known.current.has(i.id))) chime();
       const fresh = latest.filter((i) => !known.current.has(i.id) && i.kind !== "quote");
       if (fresh.length) setToasts((t) => [...t, ...fresh.map((i) => ({ id: i.id, name: i.name, type: i.eventType }))].slice(-4));
     }
@@ -30,6 +32,7 @@ export function useInbox() {
     document.title = `${s.status?.new ? `(${s.status.new}) ` : ""}Admin · Signature Stories`;
   }, []);
 
+  useEffect(() => listenForNavigation(), []);
   useEffect(() => {
     poll();
     const t = setInterval(poll, 20000);

@@ -9,6 +9,7 @@ import Documents from "./Documents.jsx";
 import DeleteButton from "./DeleteButton.jsx";
 import Reports from "./Reports.jsx";
 import { inr } from "./shared.js";
+import { chimeOn, disablePush, enablePush, pushState, setChime } from "./notify.js";
 import "./admin.css";
 
 const STATUS = { new: "New", contacted: "Contacted", booked: "Booked", closed: "Closed" };
@@ -251,7 +252,48 @@ function Settings() {
         {msg.text && <p className={msg.ok ? "adm-ok" : "adm-err"} role="status">{msg.text}</p>}
         <button className="adm-btn">Update password</button>
       </form>
+      <NotifySettings />
     </>
+  );
+}
+
+function NotifySettings() {
+  const [state, setState] = useState("…");
+  const [sound, setSound] = useState(chimeOn);
+  const [note, setNote] = useState({ ok: true, text: "" });
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { pushState().then(setState); }, []);
+  const run = async (fn, okText) => {
+    setBusy(true); setNote({ ok: true, text: "" });
+    try { await fn(); setNote({ ok: true, text: okText }); } catch (e) { setNote({ ok: false, text: e.message }); }
+    setState(await pushState()); setBusy(false);
+  };
+  const label = { on: "On for this device", off: "Off on this device", blocked: "Blocked in browser settings", unsupported: "Not supported in this browser" }[state] || "Checking…";
+  return (
+    <section className="adm-card adm-form">
+      <h2>Notifications and reminders</h2>
+      <p className="adm-muted">Phone or desktop alerts for new enquiries, quotation requests, consultations and client replies, even when this page is closed. Enable it on each device you use.</p>
+      <p><b>Alerts:</b> {label}</p>
+      <div className="adm-actions">
+        {state === "on"
+          ? <>
+              <button className="adm-btn" disabled={busy} onClick={() => run(async () => { await adminApi.pushTest(); }, "Test sent — check your notifications.")}>Send a test</button>
+              <button className="adm-btn adm-ghost dark" disabled={busy} onClick={() => run(disablePush, "Alerts turned off for this device.")}>Turn off</button>
+            </>
+          : <button className="adm-btn" disabled={busy || state === "unsupported"} onClick={() => run(enablePush, "Alerts are on for this device.")}>Turn on alerts</button>}
+      </div>
+      <label className="adm-check"><input type="checkbox" checked={sound} onChange={(e) => { setSound(e.target.checked); setChime(e.target.checked); }} /> Play a chime when something new arrives while this page is open</label>
+      <hr />
+      <p className="adm-muted">Clients get e-mail reminders automatically: payment due in 3 days, on the due date and when overdue; the event 7 days and 1 day before; consultations the day before. Each is sent once, at about 8 AM.</p>
+      <div className="adm-actions">
+        <button className="adm-btn adm-ghost dark" disabled={busy} onClick={() => run(async () => {
+          const r = await adminApi.runReminders();
+          if (r.disabled) throw new Error(r.disabled);
+          setNote({ ok: true, text: `Sent ${r.invoices} payment, ${r.events} event and ${r.consultations} consultation reminders.` });
+        }, "")}>Send due reminders now</button>
+      </div>
+      {note.text && <p className={note.ok ? "adm-ok" : "adm-err"} role="status">{note.text}</p>}
+    </section>
   );
 }
 

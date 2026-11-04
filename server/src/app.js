@@ -8,8 +8,12 @@ import { signToken, requireAuth } from "./middleware/auth.js";
 import { STATUSES } from "./lib/filter.js";
 import { inquiriesToCsv } from "./lib/csv.js";
 import { buildReport } from "./lib/report.js";
-import { notifyConsultation, notifyNewInquiry, sendDocumentEmail } from "./services/notify.js";
+import { notifyConsultation, notifyNewInquiry, sendDocumentEmail, sendMail } from "./services/notify.js";
 import { bookableDate, CONSULT_STATUSES, isIsoDate, isIsoMonth, MODES, SLOTS } from "./lib/slots.js";
+import { settle, paidSum, balanceOf } from "./lib/payments.js";
+import { notifyAdmins } from "./services/push.js";
+import { runReminders } from "./services/reminders.js";
+import crypto from "node:crypto";
 import { computeTotals, DOC_KINDS, DOC_STATUSES } from "./lib/totals.js";
 
 // Only the name is required — people should never be forced to hand over details they are not comfortable sharing.
@@ -78,7 +82,7 @@ const statusSchema = z.object({ status: z.enum(STATUSES) });
 const limiter = (windowMs, limit, message) =>
   rateLimit({ windowMs, limit, standardHeaders: true, legacyHeaders: false, message: { error: message } });
 
-export function createApp({ env, inquiryRepo, adminRepo, consultRepo, docRepo, fetchImpl, rateLimits = true, dbReady = () => true, today = () => new Date().toISOString().slice(0, 10) }) {
+export function createApp({ env, inquiryRepo, adminRepo, consultRepo, docRepo, pushRepo = null, pushSender = null, fetchImpl, rateLimits = true, dbReady = () => true, today = () => new Date().toISOString().slice(0, 10) }) {
   const app = express();
   app.set("trust proxy", 1);
   app.use(helmet());
@@ -97,6 +101,9 @@ export function createApp({ env, inquiryRepo, adminRepo, consultRepo, docRepo, f
   const submitLimit = rateLimits ? limiter(15 * 60e3, 8, "Too many enquiries. Please try again later.") : noop;
   const loginLimit = rateLimits ? limiter(15 * 60e3, 10, "Too many attempts. Please try again later.") : noop;
   const auth = requireAuth(env, adminRepo);
+  const push = (payload) => notifyAdmins({ pushRepo: pushRepo || { all: async () => [], remove: async () => {} }, pushSender }, payload);
+  const siteBase = () => env.clientOrigins.find((o) => !/localhost|127\.0\.0\.1/.test(o)) || env.clientOrigins[0] || "";
+  const shareLink = (token) => `${siteBase()}/#/q/${token}`;
   const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 
   app.get("/api/health", (_req, res) => res.json({ ok: true, db: dbReady() }));
@@ -112,6 +119,7 @@ export function createApp({ env, inquiryRepo, adminRepo, consultRepo, docRepo, f
     if (trap) return res.status(201).json({ ok: true }); // bots: pretend success, store nothing
     const saved = await inquiryRepo.create(data);
     notifyNewInquiry(env, saved, fetchImpl);
+    push({ title: saved.kind === "quote" ? "New quotation request" : "New enquiry", body: `${saved.name}${saved.eventType ? ` · ${saved.eventType}` : ""}`, url: "#/admin/inquiries" });
     res.status(201).json({ ok: true });
   }));
 
@@ -131,6 +139,7 @@ export function createApp({ env, inquiryRepo, adminRepo, consultRepo, docRepo, f
     const saved = await consultRepo.create(data);
     if (!saved) return res.status(409).json({ error: "That time was just taken. Please pick another slot." });
     notifyConsultation(env, saved, fetchImpl);
+    push({ title: "New consultation booking", body: `${saved.name} · ${saved.date} ${saved.slot}`, url: "#/admin/consultations" });
     res.status(201).json({ ok: true });
   }));
 
@@ -265,7 +274,7 @@ export function createApp({ env, inquiryRepo, adminRepo, consultRepo, docRepo, f
     const d = p.data;
     const status = d.status && DOC_STATUSES[existing.kind].includes(d.status) ? d.status : existing.status;
     const patch = withTotals({ ...d, status });
-    patch.paidAt = status === "paid" ? existing.paidAt || new Date() : undefined;
+    if (existing.kind === "invoice") Object.assign(patch, settle({ ...existing, ...patch }, today()));
     res.json(await docRepo.update(req.params.id, patch));
   }));
   app.patch("/api/admin/documents/:id/status", auth, wrap(async (req, res) => {
@@ -273,7 +282,8 @@ export function createApp({ env, inquiryRepo, adminRepo, consultRepo, docRepo, f
     if (!existing) return res.status(404).json({ error: "Not found" });
     const status = req.body?.status;
     if (!DOC_STATUSES[existing.kind].includes(status)) return res.status(400).json({ error: "Invalid status" });
-    res.json(await docRepo.update(req.params.id, { status, paidAt: status === "paid" ? new Date() : undefined }));
+    if (existing.kind !== "invoice") return res.json(await docRepo.update(req.params.id, { status }));
+    res.json(await docRepo.update(req.params.id, settle({ ...existing, status }, today())));
   }));
   app.get("/api/admin/reports", auth, wrap(async (req, res) => {
     const year = /^\d{4}$/.test(String(req.query.year)) ? String(req.query.year) : today().slice(0, 4);
@@ -287,10 +297,105 @@ export function createApp({ env, inquiryRepo, adminRepo, consultRepo, docRepo, f
     if (!d.client?.email) return res.status(400).json({ error: "Add the client's email address first." });
     const pdf = String(req.body?.pdfBase64 || "");
     if (!/^[A-Za-z0-9+/=]+$/.test(pdf) || pdf.length < 100) return res.status(400).json({ error: "PDF missing." });
-    const r = await sendDocumentEmail(env, d, pdf, fetchImpl);
+    let token = d.shareToken;
+    if (!token) { token = crypto.randomBytes(18).toString("base64url"); await docRepo.update(d.id, { shareToken: token }); }
+    const r = await sendDocumentEmail(env, d, pdf, fetchImpl, shareLink(token));
     if (!r.ok) return res.status(502).json({ error: r.error });
     const updated = d.status === "draft" ? await docRepo.update(d.id, { status: "sent" }) : d;
     res.json({ ok: true, document: updated });
+  }));
+
+  // ---- client link: view a document and accept/decline a quotation ----
+  app.post("/api/admin/documents/:id/share", auth, wrap(async (req, res) => {
+    const d = await docRepo.get(req.params.id);
+    if (!d) return res.status(404).json({ error: "Not found" });
+    let token = d.shareToken;
+    if (!token) { token = crypto.randomBytes(18).toString("base64url"); await docRepo.update(d.id, { shareToken: token }); }
+    res.json({ token, link: shareLink(token) });
+  }));
+
+  const publicDoc = (d) => ({
+    kind: d.kind, number: d.number, status: d.status, issueDate: d.issueDate, dueDate: d.dueDate, eventType: d.eventType, eventDate: d.eventDate, venue: d.venue,
+    client: { name: d.client?.name || "" }, items: d.items, subtotal: d.subtotal, discount: d.discount, taxable: d.taxable, gstPercent: d.gstPercent, tax: d.tax, total: d.total,
+    advancePercent: d.advancePercent, paymentTerms: d.paymentTerms, notes: d.notes, amountPaid: paidSum(d), balance: balanceOf(d), respondedAt: d.respondedAt || null,
+  });
+  const viewLimit = rateLimits ? limiter(15 * 60e3, 120, "Too many requests.") : noop;
+  app.get("/api/public/doc/:token", viewLimit, wrap(async (req, res) => {
+    const d = await docRepo.byToken(req.params.token);
+    if (!d || d.status === "draft") return res.status(404).json({ error: "This link is no longer available." });
+    res.json(publicDoc(d));
+  }));
+  app.post("/api/public/doc/:token/respond", viewLimit, wrap(async (req, res) => {
+    const d = await docRepo.byToken(req.params.token);
+    if (!d || d.kind !== "quotation" || d.status === "draft") return res.status(404).json({ error: "This link is no longer available." });
+    const action = req.body?.action;
+    if (!["accept", "decline"].includes(action)) return res.status(400).json({ error: "Invalid action" });
+    if (d.status !== "sent") return res.json(publicDoc(d)); // already answered: never flip a decision silently
+    const status = action === "accept" ? "accepted" : "declined";
+    const responseNote = String(req.body?.note || "").slice(0, 500);
+    const updated = await docRepo.update(d.id, { status, respondedAt: new Date(), responseNote });
+    push({ title: `Quotation ${status}`, body: `${d.client?.name} ${status} ${d.number}`, url: "#/admin/documents" });
+    notifyAdminMail(`${d.client?.name} ${status} quotation ${d.number}`, responseNote);
+    res.json(publicDoc(updated));
+  }));
+  function notifyAdminMail(subject, note) {
+    if (!env.resendKey) return;
+    sendMail(env, { to: env.notifyEmail, subject, html: `<p>${subject}.</p>${note ? `<p>Their note: ${String(note).replace(/[<>&]/g, "")}</p>` : ""}` }, fetchImpl);
+  }
+
+  // ---- part-payments on invoices ----
+  const paySchema = z.object({
+    amount: z.coerce.number().gt(0).max(1e9),
+    date: z.string().refine(isIsoDate),
+    method: z.string().trim().max(40).optional().default(""),
+    note: z.string().trim().max(200).optional().default(""),
+  });
+  app.post("/api/admin/documents/:id/payments", auth, wrap(async (req, res) => {
+    const d = await docRepo.get(req.params.id);
+    if (!d || d.kind !== "invoice") return res.status(404).json({ error: "Invoice not found" });
+    if (d.status === "cancelled") return res.status(400).json({ error: "This invoice is cancelled." });
+    const p = paySchema.safeParse(req.body);
+    if (!p.success) return res.status(400).json({ error: "Enter a valid amount and date." });
+    if (p.data.amount > balanceOf(d) + 0.005) return res.status(400).json({ error: "That is more than the balance due." });
+    const base = { ...d, payments: [...settle(d, today()).payments, { pid: `p-${crypto.randomBytes(4).toString("hex")}`, ...p.data, at: new Date() }] };
+    if (base.status === "draft") base.status = "sent";
+    res.status(201).json(await docRepo.update(d.id, settle(base, today())));
+  }));
+  app.delete("/api/admin/documents/:id/payments/:pid", auth, wrap(async (req, res) => {
+    const d = await docRepo.get(req.params.id);
+    if (!d || d.kind !== "invoice") return res.status(404).json({ error: "Invoice not found" });
+    const current = settle(d, today()).payments;
+    if (!current.some((x) => x.pid === req.params.pid)) return res.status(404).json({ error: "Payment not found" });
+    const payments = current.filter((x) => x.pid !== req.params.pid);
+    const status = d.status === "paid" ? "sent" : d.status;
+    res.json(await docRepo.update(d.id, settle({ ...d, payments, status, paidAt: undefined }, today())));
+  }));
+
+  // ---- push notifications ----
+  app.get("/api/admin/push/key", auth, (_req, res) => res.json({ key: pushSender ? env.vapidPublic : "" }));
+  app.post("/api/admin/push/subscribe", auth, wrap(async (req, res) => {
+    const s = req.body?.subscription;
+    if (!pushRepo || !s?.endpoint || !s?.keys?.p256dh || !s?.keys?.auth || String(s.endpoint).length > 1000) return res.status(400).json({ error: "Invalid subscription" });
+    await pushRepo.add({ endpoint: s.endpoint, keys: { p256dh: s.keys.p256dh, auth: s.keys.auth } }, String(req.body?.label || "").slice(0, 60));
+    res.status(201).json({ ok: true });
+  }));
+  app.post("/api/admin/push/unsubscribe", auth, wrap(async (req, res) => {
+    if (pushRepo && req.body?.endpoint) await pushRepo.remove(String(req.body.endpoint));
+    res.json({ ok: true });
+  }));
+  app.post("/api/admin/push/test", auth, wrap(async (_req, res) => {
+    if (!pushSender) return res.status(400).json({ error: "Push is not configured on the server (VAPID keys)." });
+    const sent = await notifyAdmins({ pushRepo, pushSender }, { title: "Signature Stories", body: "Notifications are working.", url: "#/admin/dashboard" });
+    res.json({ sent });
+  }));
+
+  // ---- reminders ----
+  const reminderDeps = () => ({ env, docRepo, inquiryRepo, consultRepo, fetchImpl });
+  app.post("/api/admin/reminders/run", auth, wrap(async (_req, res) => res.json(await runReminders({ ...reminderDeps(), now: new Date(), force: true }))));
+  app.post("/api/cron/reminders", wrap(async (req, res) => {
+    const given = String(req.headers["x-cron-secret"] || req.query.secret || "");
+    if (!env.cronSecret || given.length !== env.cronSecret.length || !crypto.timingSafeEqual(Buffer.from(given), Buffer.from(env.cronSecret))) return res.status(401).json({ error: "Unauthorized" });
+    res.json(await runReminders({ ...reminderDeps(), now: new Date() }));
   }));
 
   app.post("/api/admin/documents/:id/convert", auth, wrap(async (req, res) => {

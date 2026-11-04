@@ -59,6 +59,8 @@ export async function withRetry(fn, { tries = 10, delay = 6000, onWait } = {}) {
 export const publicApi = {
   submitInquiry: (payload) => request("/api/inquiries", { method: "POST", body: payload }),
   slots: (date) => request(`/api/consultations/slots?date=${encodeURIComponent(date)}`),
+  getDoc: (token) => request(`/api/public/doc/${encodeURIComponent(token)}`),
+  respondDoc: (token, action, note) => request(`/api/public/doc/${encodeURIComponent(token)}/respond`, { method: "POST", body: { action, note } }),
   bookConsultation: (payload) => request("/api/consultations", { method: "POST", body: payload }),
 };
 
@@ -81,6 +83,14 @@ export const adminApi = {
   removeDoc: (id) => request(`/api/admin/documents/${id}`, { method: "DELETE", auth: true }),
   report: (year) => request(`/api/admin/reports?year=${year}`, { auth: true }),
   sendDoc: (id, pdfBase64) => request(`/api/admin/documents/${id}/send`, { method: "POST", auth: true, body: { pdfBase64 } }),
+  shareDoc: (id) => request(`/api/admin/documents/${id}/share`, { method: "POST", auth: true, body: {} }),
+  addPayment: (id, body) => request(`/api/admin/documents/${id}/payments`, { method: "POST", auth: true, body }),
+  removePayment: (id, pid) => request(`/api/admin/documents/${id}/payments/${pid}`, { method: "DELETE", auth: true }),
+  pushKey: () => request("/api/admin/push/key", { auth: true }),
+  pushSubscribe: (subscription, label) => request("/api/admin/push/subscribe", { method: "POST", auth: true, body: { subscription, label } }),
+  pushUnsubscribe: (endpoint) => request("/api/admin/push/unsubscribe", { method: "POST", auth: true, body: { endpoint } }),
+  pushTest: () => request("/api/admin/push/test", { method: "POST", auth: true, body: {} }),
+  runReminders: () => request("/api/admin/reminders/run", { method: "POST", auth: true, body: {} }),
   stats: () => request("/api/admin/stats", { auth: true }),
   list: (params) => request(`/api/admin/inquiries?${new URLSearchParams(params)}`, { auth: true }),
   setStatus: (id, status) => request(`/api/admin/inquiries/${id}`, { method: "PATCH", auth: true, body: { status } }),

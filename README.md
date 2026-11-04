@@ -40,7 +40,7 @@ The site is fully static: upload `dist/` to any static host.
 Create a free cluster with the owner's Google account, add a database user, allow network access (0.0.0.0/0 for Render), and copy the connection string into `MONGODB_URI`.
 
 ### Deploy
-- **API on Render** (or use `render.yaml` as a Blueprint): web service, root directory `server`, build `npm install`, start `npm start`. Env: `MONGODB_URI`, `JWT_SECRET`, `CLIENT_ORIGINS` (your Vercel URL), optional `RESEND_API_KEY`, `NOTIFY_EMAIL`, `MAIL_FROM`. Also set `ADMIN_PASSWORD`; the admin account is created on first boot, so no shell is needed.
+- **API on Render** (or use `render.yaml` as a Blueprint): web service, root directory `server`, build `npm install`, start `npm start`. Env: `MONGODB_URI`, `JWT_SECRET`, `CLIENT_ORIGINS` (your Vercel URL), optional `RESEND_API_KEY`, `NOTIFY_EMAIL`, `MAIL_FROM`. Also set `ADMIN_PASSWORD`; for admin alerts run `npm --prefix server run vapid` once and set `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY`; the admin account is created on first boot, so no shell is needed.
 - **Website on Vercel**: set `VITE_API_URL` to the Render URL (no trailing slash).
 - Never commit `.env`; the admin password is never stored in the repo.
 
@@ -74,3 +74,10 @@ Free Render services sleep after ~15 minutes without traffic and take up to a mi
 - **Get a quotation** (`#/quote`): customers pick services, event details and budget. It arrives in the admin as a *quotation request*.
 - **Admin alerts** (polled every 20 s while the panel is open): a red badge on Enquiries, a toast for each new enquiry, and a pop-up for each new quotation request with a **Prepare quotation** button that opens the quotation editor pre-filled (client, event, venue, services as line items). Fix the charges and the payment plan (advance % + terms), then **Save & download PDF** or **Email to client**; **Message on WhatsApp** opens a prefilled chat.
 - **Server CORS** now ignores trailing slashes in `CLIENT_ORIGINS` and also accepts `https://signature-stories*.vercel.app` preview URLs.
+
+## Alerts, client links, part-payments and reminders
+
+- **Alerts**: Admin → Settings → "Turn on alerts" on each device. New enquiries, quotation requests, consultations and client replies arrive as phone/desktop notifications even when the page is closed (needs the VAPID keys above; on iPhone, add the site to the Home Screen first). While the panel is open a chime also plays (can be switched off there).
+- **Client link**: open a sent quotation or invoice and press "Copy client link" (the e-mail to the client also carries the button). The client sees the document, can download the PDF and, for quotations, accept or decline. Acceptance marks it *accepted* and alerts you. Drafts are never visible.
+- **Part-payments**: on an invoice, record each payment received (amount, date, method). Balance is tracked automatically and the invoice becomes *paid* when payments cover the total. The PDF shows received and balance due, and the UPI QR is for the balance. Reports count money as collected on the day each payment was recorded.
+- **Reminders** (e-mail, each sent once, about 8 AM IST): invoice due in 3 days / due today / 3 and 10 days overdue; booked event 7 days and 1 day before; consultation the day before. They need `RESEND_API_KEY` and a server that is awake (keep-alive or UptimeRobot). "Send due reminders now" in Settings runs them on demand.

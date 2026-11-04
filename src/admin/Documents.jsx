@@ -71,6 +71,27 @@ function Editor({ initial, onBack, onSaved }) {
       ` Advance on confirmation: ${inr(paymentSchedule(t.total, f.advancePercent)[0].amount)}. We have also emailed you the PDF. Thank you — Signature Stories`;
     return `https://wa.me/${num}?text=${encodeURIComponent(text)}`;
   };
+  const copyLink = async () => {
+    setErr(""); setMsg("");
+    try {
+      const { link } = await adminApi.shareDoc(f.id);
+      try { await navigator.clipboard.writeText(link); setMsg("Client link copied. Anyone with it can view this document."); }
+      catch { window.prompt("Copy this client link:", link); }
+    } catch (e) { setErr(e.message); }
+  };
+  const [pay, setPay] = useState({ amount: "", date: isoToday(), method: "UPI", note: "" });
+  const addPay = async (e) => {
+    e.preventDefault(); setErr(""); setMsg("");
+    try {
+      const saved = await adminApi.addPayment(f.id, { ...pay, amount: Number(pay.amount) });
+      setF(saved); setPay((p) => ({ ...p, amount: "", note: "" })); setMsg("Payment recorded."); onSaved();
+    } catch (x) { setErr(x.message); }
+  };
+  const delPay = async (pid) => {
+    try { setF(await adminApi.removePayment(f.id, pid)); onSaved(); } catch (x) { setErr(x.message); }
+  };
+  const paid = Number(f.amountPaid) || 0;
+  const balance = Math.max(0, t.total - paid);
   const convert = async () => {
     try { const inv = await adminApi.convertDoc(f.id); onSaved(); onBack(inv); } catch (e) { setErr(e.message); }
   };
@@ -140,6 +161,32 @@ function Editor({ initial, onBack, onSaved }) {
           {paymentSchedule(t.total, f.advancePercent).map((r) => <li key={r.label}><b>{r.label}</b> {inr(r.amount)}<small>{r.when}</small></li>)}
         </ul>
 
+        {isInv && f.id && (
+          <section className="adm-pay">
+            <h2>Payments received</h2>
+            <p className="adm-paystat"><span>Total <b>{inr(t.total)}</b></span><span>Received <b>{inr(paid)}</b></span><span className={balance > 0 ? "due" : "clear"}>Balance <b>{inr(balance)}</b></span></p>
+            {(f.payments || []).length > 0 && (
+              <ul className="adm-agenda">
+                {f.payments.map((p) => (
+                  <li key={p.pid}><b>{inr(p.amount)}</b> {p.method}<small>{fmtDay(p.date)}{p.note ? ` · ${p.note}` : ""}</small>
+                    <button type="button" className="adm-x2" aria-label="Remove payment" onClick={() => delPay(p.pid)}>×</button></li>
+                ))}
+              </ul>
+            )}
+            {balance > 0 && f.status !== "cancelled" && (
+              <form className="adm-payform" onSubmit={addPay}>
+                <input type="number" min="1" step="0.01" max={balance} required placeholder="Amount received" value={pay.amount} onChange={(e) => setPay({ ...pay, amount: e.target.value })} />
+                <input type="date" required value={pay.date} onChange={(e) => setPay({ ...pay, date: e.target.value })} />
+                <select value={pay.method} onChange={(e) => setPay({ ...pay, method: e.target.value })}>{["UPI", "Cash", "Bank transfer", "Cheque", "Card"].map((m) => <option key={m}>{m}</option>)}</select>
+                <input placeholder="Note (optional)" value={pay.note} onChange={(e) => setPay({ ...pay, note: e.target.value })} />
+                <button className="adm-btn">Record payment</button>
+                <button type="button" className="adm-btn adm-ghost dark" onClick={() => setPay({ ...pay, amount: String(balance) })}>Full balance</button>
+              </form>
+            )}
+          </section>
+        )}
+        {f.kind === "quotation" && f.respondedAt && <p className="adm-ok">Client {f.status} this quotation on {fmtDay(String(f.respondedAt).slice(0, 10))}.{f.responseNote ? ` Note: “${f.responseNote}”` : ""}</p>}
+
         <label className="adm-label">{isInv ? "Notes" : "Terms and notes"}
           <textarea rows="3" value={f.notes} onChange={set("notes")} placeholder="Shown at the bottom of the PDF" />
         </label>
@@ -149,6 +196,7 @@ function Editor({ initial, onBack, onSaved }) {
           <button className="adm-btn" onClick={save} disabled={busy || !f.client.name.trim()}>{f.id ? "Save changes" : "Create"}</button>
           <button className="adm-btn" onClick={pdf} disabled={busy || !f.client.name.trim()}>Save & download PDF</button>
           <button className="adm-btn" title="Saves and emails the PDF to the client" onClick={email} disabled={busy || !f.client.name.trim() || !f.client.email.trim()}>Email to client</button>
+          {f.id && f.status !== "draft" && <button className="adm-btn adm-ghost dark" onClick={copyLink}>Copy client link</button>}
           {f.id && waLink() && <a className="adm-btn adm-ghost dark" href={waLink()} target="_blank" rel="noreferrer">Message on WhatsApp</a>}
           {f.id && f.kind === "quotation" && <button className="adm-btn" onClick={convert}>Convert to invoice</button>}
           {f.id && <DeleteButton what={f.number} onConfirm={async () => { try { await adminApi.removeDoc(f.id); onSaved(); onBack(); } catch (e) { setErr(e.message); } }} />}
@@ -224,7 +272,7 @@ export default function Documents({ kind, query }) {
                 <td><b>{d.number}</b></td>
                 <td>{d.client.name}<small>{d.eventType}</small></td>
                 <td>{fmtDay(d.issueDate)}</td>
-                <td>{inr(d.total)}</td>
+                <td>{inr(d.total)}{d.kind === "invoice" && d.amountPaid > 0 && d.status !== "paid" && <small>Balance {inr(d.total - d.amountPaid)}</small>}</td>
                 <td onClick={(e) => e.stopPropagation()}>
                   <select value={d.status} onChange={(e) => quickStatus(d, e.target.value)} aria-label="Status">
                     {DOC_STATUSES[kind].map((s) => <option key={s}>{s}</option>)}

@@ -3,7 +3,9 @@ import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import { loadEnv } from "./config.js";
 import { createApp } from "./app.js";
-import { mongoAdminRepo, mongoConsultRepo, mongoDocRepo, mongoInquiryRepo } from "./repos/mongo.js";
+import { createPushSender } from "./services/push.js";
+import { runReminders } from "./services/reminders.js";
+import { mongoAdminRepo, mongoConsultRepo, mongoDocRepo, mongoInquiryRepo, mongoPushRepo } from "./repos/mongo.js";
 
 const env = loadEnv();
 if (env.jwtSecret.length < 32) {
@@ -16,7 +18,7 @@ const dbReady = () => mongoose.connection.readyState === 1;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // Listen immediately so the host sees a healthy service and the site can wake it; the database connects in the background.
-createApp({ env, inquiryRepo: mongoInquiryRepo, adminRepo: mongoAdminRepo, consultRepo: mongoConsultRepo, docRepo: mongoDocRepo, dbReady })
+createApp({ env, inquiryRepo: mongoInquiryRepo, adminRepo: mongoAdminRepo, consultRepo: mongoConsultRepo, docRepo: mongoDocRepo, pushRepo: mongoPushRepo, pushSender: createPushSender(env), dbReady })
   .listen(env.port, () => console.log(`API listening on :${env.port}`));
 
 async function ensureAdmin() {
@@ -44,3 +46,11 @@ async function connectForever() {
   }
 }
 connectForever();
+
+// Hourly reminder sweep (each reminder is sent once; the job itself waits for 8 AM IST).
+setInterval(() => {
+  if (mongoose.connection.readyState !== 1) return;
+  runReminders({ env, docRepo: mongoDocRepo, inquiryRepo: mongoInquiryRepo, consultRepo: mongoConsultRepo, fetchImpl: fetch })
+    .then((r) => (r.invoices || r.events || r.consultations) && console.log("Reminders sent", r))
+    .catch((e) => console.error("Reminder job failed:", e.message));
+}, 60 * 60 * 1000);

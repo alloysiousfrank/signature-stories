@@ -14,6 +14,9 @@ export function loadEnv(src = process.env) {
     mailFrom: src.MAIL_FROM || "Signature Stories <onboarding@resend.dev>",
     adminEmail: (src.ADMIN_EMAIL || "bengalisongaf@gmail.com").toLowerCase(),
     adminPassword: src.ADMIN_PASSWORD || "",
+    vapidPublic: src.VAPID_PUBLIC_KEY || "",
+    vapidPrivate: src.VAPID_PRIVATE_KEY || "",
+    cronSecret: src.CRON_SECRET || "",
     nodeEnv: src.NODE_ENV || "development",
   };
 }

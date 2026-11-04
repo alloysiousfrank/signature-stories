@@ -8,6 +8,8 @@ import "./glass.css";
 import { EventDetail, Events } from "./events.jsx";
 import { Consult } from "./consult.jsx";
 import { Quote } from "./quote.jsx";
+import "./clientview.css";
+import { ClientView } from "./clientview.jsx";
 import { BUSINESS, WHATSAPP_NUMBER } from "./config.js";
 import { About, Contact, Gallery, Home, Services } from "./pages.jsx";
 import { LuxuryLayer } from "./ui.jsx";
@@ -47,7 +49,7 @@ function parseHash() {
   const raw = window.location.hash.replace(/^#\/?/, "");
   const [path, qs = ""] = raw.split("?");
   const [page, param = ""] = path.split("/");
-  const known = [...PAGES, "consult", "quote", "admin"];
+  const known = [...PAGES, "consult", "quote", "admin", "q"];
   return { page: known.includes(page) ? page : "home", param, query: new URLSearchParams(qs) };
 }
 
@@ -202,12 +204,15 @@ function Footer() {
 export default function App() {
   const { page, param, query } = useHashRoute();
   const isAdmin = page === "admin";
+  const isClientLink = page === "q";
   // The intro plays once per visit, on first load only, and never for the admin panel.
-  const [introDone, setIntroDone] = useState(isAdmin);
+  const [introDone, setIntroDone] = useState(isAdmin || isClientLink);
   useEffect(() => { wakeServer(); }, []);
   const go = (p) => { window.location.hash = `#/${p}`; };
 
   useScrollReveal(`${page}/${param}`);
+
+  if (isClientLink) return <ClientView token={param} />;
 
   if (isAdmin) {
     return (

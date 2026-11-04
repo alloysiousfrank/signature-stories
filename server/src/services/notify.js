@@ -39,7 +39,7 @@ export async function notifyConsultation(env, c, fetchImpl = fetch) {
 }
 
 /* E-mails a quotation / invoice PDF to the client. Returns { ok, error }. */
-export async function sendDocumentEmail(env, doc, pdfBase64, fetchImpl = fetch) {
+export async function sendDocumentEmail(env, doc, pdfBase64, fetchImpl = fetch, link = "") {
   if (!env.resendKey) return { ok: false, error: "E-mail is not configured on the server (RESEND_API_KEY)." };
   const esc = (v) => String(v ?? "").replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
   const isInv = doc.kind === "invoice";
@@ -50,6 +50,7 @@ export async function sendDocumentEmail(env, doc, pdfBase64, fetchImpl = fetch) 
 <p>Dear ${esc(doc.client?.name)},</p>
 <p>Please find attached your ${label.toLowerCase()} <b>${esc(doc.number)}</b>${doc.eventType ? ` for your ${esc(doc.eventType.toLowerCase())}` : ""}.</p>
 <p style="font-size:18px"><b>Total: ${esc(total)}</b>${doc.dueDate ? `<br><span style="font-size:14px">${isInv ? "Due" : "Valid until"}: ${esc(doc.dueDate)}</span>` : ""}</p>
+${link ? `<p><a href="${esc(link)}" style="display:inline-block;background:#8b6f33;color:#fff;padding:10px 22px;border-radius:24px;text-decoration:none">${isInv ? "View invoice" : "View and accept quotation"}</a></p>` : ""}
 <p>If you have any questions, simply reply to this email.</p>
 <p>Warm regards,<br>Team Signature Stories</p></div>`;
   try {
@@ -66,4 +67,17 @@ export async function sendDocumentEmail(env, doc, pdfBase64, fetchImpl = fetch) 
     const body = await res.json().catch(() => ({}));
     return { ok: false, error: body.message || `Mail service returned ${res.status}.` };
   } catch { return { ok: false, error: "Could not reach the mail service." }; }
+}
+
+/* Generic transactional mail through Resend. Returns true on success, never throws. */
+export async function sendMail(env, { to, subject, html, replyTo, attachments }, fetchImpl = fetch) {
+  if (!env.resendKey || !to) return false;
+  try {
+    const res = await fetchImpl("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${env.resendKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ from: env.mailFrom, to: [to], ...(replyTo ? { reply_to: replyTo } : {}), subject, html, ...(attachments ? { attachments } : {}) }),
+    });
+    return res.ok;
+  } catch { return false; }
 }

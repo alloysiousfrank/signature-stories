@@ -30,6 +30,8 @@ export async function buildPdf(doc) {
   const W = pdf.internal.pageSize.getWidth(), H = pdf.internal.pageSize.getHeight(), M = 16;
   const isInv = doc.kind === "invoice";
   const t = computeTotals(doc);
+  const received = isInv ? Math.min(t.total, Number(doc.amountPaid) || (doc.status === "paid" ? t.total : 0)) : 0;
+  const balance = Math.max(0, Math.round((t.total - received) * 100) / 100);
 
   // header band
   pdf.setFillColor(...IVORY); pdf.rect(0, 0, W, 42, "F");
@@ -87,11 +89,18 @@ export async function buildPdf(doc) {
   y = pdf.lastAutoTable.finalY + 1;
   pdf.setFillColor(...GOLD_DARK); pdf.roundedRect(W - M - 82, y, 82, 11, 2, 2, "F");
   pdf.setTextColor(255, 253, 247); pdf.setFont("Cinzel", "normal"); pdf.setFontSize(10.5);
-  pdf.text(isInv ? "TOTAL DUE" : "TOTAL", W - M - 78, y + 7.2);
+  pdf.text(isInv ? "TOTAL" : "TOTAL", W - M - 78, y + 7.2);
   pdf.setFont("Cormorant", "bold"); pdf.setFontSize(13);
   pdf.text(money(t.total), W - M - 4, y + 7.2, { align: "right" });
   if (isInv && doc.status === "paid") {
     pdf.setTextColor(47, 107, 63); pdf.setFont("Cinzel", "normal"); pdf.setFontSize(18); pdf.text("PAID", M, y + 8);
+  }
+
+  if (received > 0) {
+    pdf.setFont("Cormorant", "normal"); pdf.setFontSize(11.5); pdf.setTextColor(...INK);
+    pdf.text("Received", W - M - 78, y + 17); pdf.text(`- ${money(received)}`, W - M - 4, y + 17, { align: "right" });
+    pdf.setFont("Cormorant", "bold"); pdf.text("Balance due", W - M - 78, y + 23); pdf.text(money(balance), W - M - 4, y + 23, { align: "right" });
+    y += 12;
   }
 
   // payment schedule
@@ -109,14 +118,14 @@ export async function buildPdf(doc) {
   ny = py + 4;
 
   // payment QR (invoices) + notes
-  if (isInv && doc.status !== "paid" && BUSINESS.upiId) {
-    const upi = `upi://pay?pa=${encodeURIComponent(BUSINESS.upiId)}&pn=${encodeURIComponent(BUSINESS.short)}&am=${t.total.toFixed(2)}&cu=INR&tn=${encodeURIComponent(doc.number)}`;
+  if (isInv && balance > 0 && doc.status !== "cancelled" && BUSINESS.upiId) {
+    const upi = `upi://pay?pa=${encodeURIComponent(BUSINESS.upiId)}&pn=${encodeURIComponent(BUSINESS.short)}&am=${balance.toFixed(2)}&cu=INR&tn=${encodeURIComponent(doc.number)}`;
     const qr = await QR.toDataURL(upi, { margin: 1, width: 300, color: { dark: "#242019", light: "#ffffff" } });
     if (ny + 40 > H - 24) { pdf.addPage(); ny = 20; }
     pdf.addImage(qr, "PNG", M, ny, 32, 32);
     pdf.setTextColor(...GOLD_DARK); pdf.setFontSize(8.5); pdf.setFont("Cinzel", "normal"); pdf.text("PAY BY UPI", M + 36, ny + 6);
     pdf.setFont("Cormorant", "normal"); pdf.setTextColor(...INK); pdf.setFontSize(11);
-    pdf.text([`UPI ID: ${BUSINESS.upiId}`, `Amount: ${money(t.total)}`, `Ref: ${doc.number}`], M + 36, ny + 12);
+    pdf.text([`UPI ID: ${BUSINESS.upiId}`, `Amount: ${money(balance)}`, `Ref: ${doc.number}`], M + 36, ny + 12);
     ny += 38;
   }
   const terms = doc.notes || (isInv

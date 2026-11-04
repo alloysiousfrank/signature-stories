@@ -17,6 +17,8 @@ export function fakeRepos() {
     async addNote(id, note) { const r = inq.find((d) => d.id === id); if (r) r.notes.push(note); return r || null; },
     async remove(id) { const i = inq.findIndex((d) => d.id === id); if (i < 0) return false; inq.splice(i, 1); return true; },
     async byEventMonth(m) { return inq.filter((d) => (d.eventDate || "").startsWith(m) && d.status !== "closed"); },
+    async bookedUpcoming(a, b) { return inq.filter((d) => d.status === "booked" && d.eventDate >= a && d.eventDate <= b); },
+    async markReminder(id, keys) { const r = inq.find((d) => d.id === id); r.remindersSent = [...new Set([...(r.remindersSent || []), ...keys])]; },
     async stats() { return { latestNew: inq.filter((d) => d.status === "new").slice(0, 5), newQuotes: inq.filter((d) => d.status === "new" && d.kind === "quote").length, total: inq.length, last30: inq.length, status: { new: inq.filter((d) => d.status === "new").length, contacted: 0, booked: 0, closed: 0 }, byType: [] }; },
   };
   const adminRepo = {
@@ -35,6 +37,8 @@ export function fakeRepos() {
     async byMonth(m) { return cons.filter((c) => c.date.startsWith(m) && c.status !== "cancelled"); },
     async setStatus(id, status) { const r = cons.find((c) => c.id === id); if (r) r.status = status; return r || null; },
     async remove(id) { const i = cons.findIndex((c) => c.id === id); if (i < 0) return false; cons.splice(i, 1); return true; },
+    async confirmedBetween(a, b) { return cons.filter((c) => c.status === "confirmed" && c.date >= a && c.date <= b); },
+    async markReminder(id, keys) { const r = cons.find((c) => c.id === id); r.remindersSent = [...new Set([...(r.remindersSent || []), ...keys])]; },
     async pendingCount() { return cons.filter((c) => c.status === "pending").length; },
     async upcoming() { return cons.filter((c) => c.status === "pending" || c.status === "confirmed"); },
   };
@@ -47,9 +51,19 @@ export function fakeRepos() {
     async update(id, patch) { const r = docs.find((d) => d.id === id); if (!r) return null; Object.assign(r, patch); return r; },
     async remove(id) { const i = docs.findIndex((d) => d.id === id); if (i < 0) return false; docs.splice(i, 1); return true; },
     async forYear(kind, y) { return docs.filter((d) => d.kind === kind && d.issueDate.startsWith(`${y}-`)); },
-    async outstanding() { const r = docs.filter((d) => d.kind === "invoice" && d.status === "sent"); return { count: r.length, amount: r.reduce((a, d) => a + d.total, 0) }; },
+    async outstanding() { const r = docs.filter((d) => d.kind === "invoice" && d.status === "sent"); return { count: r.length, amount: r.reduce((a, d) => a + d.total - (d.amountPaid || 0), 0) }; },
+    async sentInvoices() { return docs.filter((d) => d.kind === "invoice" && d.status === "sent" && d.dueDate); },
+    async byToken(t) { return docs.find((d) => d.shareToken && d.shareToken === t) || null; },
+    async markReminder(id, keys) { const r = docs.find((d) => d.id === id); r.remindersSent = [...new Set([...(r.remindersSent || []), ...keys])]; },
   };
-  return { inquiryRepo, adminRepo, consultRepo, docRepo, inq, cons, docs };
+  const subs = [];
+  const pushRepo = {
+    async add(s) { if (!subs.some((x) => x.endpoint === s.endpoint)) subs.push(s); },
+    async all() { return [...subs]; },
+    async remove(e) { const i = subs.findIndex((x) => x.endpoint === e); if (i >= 0) subs.splice(i, 1); },
+    async count() { return subs.length; },
+  };
+  return { inquiryRepo, adminRepo, consultRepo, docRepo, pushRepo, inq, cons, docs, subs };
 }
 
 export function makeApp(extra = {}) {

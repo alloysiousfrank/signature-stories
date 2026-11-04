@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { Admin, Consultation, Counter, Document, Inquiry } from "../models.js";
+import { Admin, Consultation, Counter, Document, Inquiry, PushSub } from "../models.js";
 import { buildFilter, STATUSES } from "../lib/filter.js";
 
 const ok = (id) => mongoose.isValidObjectId(id);
@@ -24,6 +24,10 @@ export const mongoInquiryRepo = {
     return ok(id) ? json(await Inquiry.findByIdAndUpdate(id, { $push: { notes: note } }, { new: true })) : null;
   },
   async remove(id) { return ok(id) ? !!(await Inquiry.findByIdAndDelete(id)) : false; },
+  async bookedUpcoming(from, to) {
+    return (await Inquiry.find({ status: "booked", eventDate: { $gte: from, $lte: to } })).map(json);
+  },
+  async markReminder(id, key) { if (ok(id)) await Inquiry.findByIdAndUpdate(id, { $addToSet: { remindersSent: key } }); },
   async byEventMonth(month) {
     return (await Inquiry.find({ eventDate: { $regex: `^${month}` }, status: { $ne: "closed" } }).sort({ eventDate: 1 })).map(json);
   },
@@ -78,6 +82,10 @@ export const mongoConsultRepo = {
   },
   async remove(id) { return ok(id) ? !!(await Consultation.findByIdAndDelete(id)) : false; },
   async pendingCount() { return Consultation.countDocuments({ status: "pending" }); },
+  async confirmedBetween(from, to) {
+    return (await Consultation.find({ status: "confirmed", date: { $gte: from, $lte: to } })).map(json);
+  },
+  async markReminder(id, key) { if (ok(id)) await Consultation.findByIdAndUpdate(id, { $addToSet: { remindersSent: key } }); },
   async upcoming(today, n = 5) {
     return (await Consultation.find({ date: { $gte: today }, status: { $in: ["pending", "confirmed"] } }).sort({ date: 1, slot: 1 }).limit(n)).map(json);
   },
@@ -107,7 +115,19 @@ export const mongoDocRepo = {
     return (await Document.find({ kind, issueDate: { $regex: `^${year}-` } }).lean()).map((d) => ({ ...d, id: String(d._id) }));
   },
   async outstanding() {
-    const rows = await Document.find({ kind: "invoice", status: "sent" }, "total").lean();
-    return { count: rows.length, amount: rows.reduce((s, r) => s + (r.total || 0), 0) };
+    const rows = await Document.find({ kind: "invoice", status: "sent" }, "total amountPaid").lean();
+    return { count: rows.length, amount: rows.reduce((s, r) => s + Math.max(0, (r.total || 0) - (r.amountPaid || 0)), 0) };
   },
+  async sentInvoices() { return (await Document.find({ kind: "invoice", status: "sent", dueDate: { $ne: "" } })).map(json); },
+  async byToken(token) { return typeof token === "string" && token.length >= 20 ? json(await Document.findOne({ shareToken: token })) : null; },
+  async markReminder(id, keys) { if (ok(id)) await Document.findByIdAndUpdate(id, { $addToSet: { remindersSent: { $each: keys } } }); },
+};
+
+export const mongoPushRepo = {
+  async add(sub, label) {
+    await PushSub.findOneAndUpdate({ endpoint: sub.endpoint }, { endpoint: sub.endpoint, keys: sub.keys, label }, { upsert: true, new: true });
+  },
+  async all() { return (await PushSub.find({}).lean()).map((d) => ({ endpoint: d.endpoint, keys: d.keys })); },
+  async remove(endpoint) { await PushSub.deleteOne({ endpoint }); },
+  async count() { return PushSub.countDocuments({}); },
 };
