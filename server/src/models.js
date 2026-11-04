@@ -115,6 +115,7 @@ const pushSchema = new mongoose.Schema({
   label: { type: String, default: "" },
 }, opts);
 export const PushSub = mongoose.models.PushSub || mongoose.model("PushSub", pushSchema);
+export const Setting = mongoose.models.Setting || mongoose.model("Setting", new mongoose.Schema({ key: { type: String, unique: true }, value: String }, opts));
 export const Counter = mongoose.models.Counter || mongoose.model("Counter", counterSchema);
 export const Admin = mongoose.models.Admin || mongoose.model("Admin", adminSchema);
 export const Inquiry = mongoose.models.Inquiry || mongoose.model("Inquiry", inquirySchema);

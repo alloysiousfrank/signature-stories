@@ -40,7 +40,7 @@ The site is fully static: upload `dist/` to any static host.
 Create a free cluster with the owner's Google account, add a database user, allow network access (0.0.0.0/0 for Render), and copy the connection string into `MONGODB_URI`.
 
 ### Deploy
-- **API on Render** (or use `render.yaml` as a Blueprint): web service, root directory `server`, build `npm install`, start `npm start`. Env: `MONGODB_URI`, `JWT_SECRET`, `CLIENT_ORIGINS` (your Vercel URL), optional `RESEND_API_KEY`, `NOTIFY_EMAIL`, `MAIL_FROM`. Also set `ADMIN_PASSWORD`; for admin alerts run `npm --prefix server run vapid` once and set `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY`; the admin account is created on first boot, so no shell is needed.
+- **API on Render** (or use `render.yaml` as a Blueprint): web service, root directory `server`, build `npm install`, start `npm start`. Env: `MONGODB_URI`, `JWT_SECRET`, `CLIENT_ORIGINS` (your Vercel URL), optional `RESEND_API_KEY`, `NOTIFY_EMAIL`, `MAIL_FROM`. Also set `ADMIN_PASSWORD`; alert keys are generated automatically and stored in the database (or set `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` yourself); the admin account is created on first boot, so no shell is needed.
 - **Website on Vercel**: set `VITE_API_URL` to the Render URL (no trailing slash).
 - Never commit `.env`; the admin password is never stored in the repo.
 

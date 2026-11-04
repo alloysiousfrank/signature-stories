@@ -3,9 +3,10 @@ import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import { loadEnv } from "./config.js";
 import { createApp } from "./app.js";
+import webpush from "web-push";
 import { createPushSender } from "./services/push.js";
 import { runReminders } from "./services/reminders.js";
-import { mongoAdminRepo, mongoConsultRepo, mongoDocRepo, mongoInquiryRepo, mongoPushRepo } from "./repos/mongo.js";
+import { mongoAdminRepo, mongoConsultRepo, mongoDocRepo, mongoInquiryRepo, mongoPushRepo, mongoSettingsRepo } from "./repos/mongo.js";
 
 const env = loadEnv();
 if (env.jwtSecret.length < 32) {
@@ -14,11 +15,23 @@ if (env.jwtSecret.length < 32) {
   env.jwtSecret = crypto.randomBytes(48).toString("hex");
 }
 
+let pushNow = createPushSender(env); // set from env keys, or from keys generated once and kept in the database
+async function ensurePush() {
+  if (pushNow) return;
+  let pub = await mongoSettingsRepo.get("vapidPublic"); let priv = await mongoSettingsRepo.get("vapidPrivate");
+  if (!pub || !priv) {
+    ({ publicKey: pub, privateKey: priv } = webpush.generateVAPIDKeys());
+    await mongoSettingsRepo.set("vapidPublic", pub); await mongoSettingsRepo.set("vapidPrivate", priv);
+    console.log("Generated alert keys and stored them in the database.");
+  }
+  env.vapidPublic = pub; env.vapidPrivate = priv;
+  pushNow = createPushSender(env);
+}
 const dbReady = () => mongoose.connection.readyState === 1;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // Listen immediately so the host sees a healthy service and the site can wake it; the database connects in the background.
-createApp({ env, inquiryRepo: mongoInquiryRepo, adminRepo: mongoAdminRepo, consultRepo: mongoConsultRepo, docRepo: mongoDocRepo, pushRepo: mongoPushRepo, pushSender: createPushSender(env), dbReady })
+createApp({ env, inquiryRepo: mongoInquiryRepo, adminRepo: mongoAdminRepo, consultRepo: mongoConsultRepo, docRepo: mongoDocRepo, pushRepo: mongoPushRepo, pushSender: (sub, payload) => { if (!pushNow) throw new Error("push not ready"); return pushNow(sub, payload); }, dbReady })
   .listen(env.port, () => console.log(`API listening on :${env.port}`));
 
 async function ensureAdmin() {
@@ -38,6 +51,7 @@ async function connectForever() {
       await mongoose.connect(env.mongoUri, { serverSelectionTimeoutMS: 15000 });
       console.log("MongoDB connected");
       await ensureAdmin();
+      await ensurePush().catch((e) => console.error("Alert keys could not be prepared:", e.message));
       return;
     } catch (e) {
       console.error("MongoDB connection failed (check the connection string, password and Atlas Network Access):", e.message);

@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { Admin, Consultation, Counter, Document, Inquiry, PushSub } from "../models.js";
+import { Admin, Consultation, Counter, Document, Inquiry, PushSub, Setting } from "../models.js";
 import { buildFilter, STATUSES } from "../lib/filter.js";
 
 const ok = (id) => mongoose.isValidObjectId(id);
@@ -121,6 +121,12 @@ export const mongoDocRepo = {
   async sentInvoices() { return (await Document.find({ kind: "invoice", status: "sent", dueDate: { $ne: "" } })).map(json); },
   async byToken(token) { return typeof token === "string" && token.length >= 20 ? json(await Document.findOne({ shareToken: token })) : null; },
   async markReminder(id, keys) { if (ok(id)) await Document.findByIdAndUpdate(id, { $addToSet: { remindersSent: { $each: keys } } }); },
+};
+
+/* Small key/value store, used to keep generated alert keys so no manual setup is needed. */
+export const mongoSettingsRepo = {
+  async get(key) { return (await Setting.findOne({ key }).lean())?.value || ""; },
+  async set(key, value) { await Setting.findOneAndUpdate({ key }, { key, value }, { upsert: true }); },
 };
 
 export const mongoPushRepo = {
