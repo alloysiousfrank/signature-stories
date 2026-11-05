@@ -153,6 +153,11 @@ export async function downloadPdf(doc) {
   pdf.save(`${doc.number}.pdf`);
 }
 
+export async function pdfBlob(doc) {
+  const pdf = await buildPdf(doc);
+  return pdf.output("blob");
+}
+
 export async function pdfBase64(doc) {
   const pdf = await buildPdf(doc);
   return pdf.output("datauristring").split("base64,")[1];

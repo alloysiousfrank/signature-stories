@@ -71,6 +71,35 @@ function Editor({ initial, onBack, onSaved }) {
       ` Advance on confirmation: ${inr(paymentSchedule(t.total, f.advancePercent)[0].amount)}. We have also emailed you the PDF. Thank you — Signature Stories`;
     return `https://wa.me/${num}?text=${encodeURIComponent(text)}`;
   };
+  /* WhatsApp links cannot carry files, so on phones we open the share sheet with the PDF attached
+     (pick WhatsApp and the customer). On a computer the PDF is downloaded and WhatsApp opens with the text. */
+  const sendWhatsApp = async () => {
+    setErr(""); setMsg("");
+    const saved = await save();
+    if (!saved) return;
+    setBusy(true);
+    try {
+      if (saved.status === "draft") setF(await adminApi.setDocStatus(saved.id, "sent")); // the client link only opens sent documents
+      const { link } = await adminApi.shareDoc(saved.id);
+      const st = computeTotals(saved);
+      const text = `Hello ${saved.client.name}, your ${saved.kind} ${saved.number} for your ${saved.eventType || "event"} is ready. Total: ${inr(st.total)}.` +
+        ` Advance on confirmation: ${inr(paymentSchedule(st.total, saved.advancePercent)[0].amount)}. View online: ${link} Thank you — Signature Stories`;
+      const { pdfBlob } = await import("./pdf.js");
+      const file = new File([await pdfBlob(saved)], `${saved.number}.pdf`, { type: "application/pdf" });
+      if (navigator.canShare?.({ files: [file] })) {
+        try { await navigator.share({ files: [file], text }); setMsg("Shared. Choose WhatsApp and the customer in the share sheet."); }
+        catch (e) { if (e?.name !== "AbortError") throw e; }
+      } else {
+        const url = URL.createObjectURL(file);
+        const a = Object.assign(document.createElement("a"), { href: url, download: file.name });
+        document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 5000);
+        const digits = (saved.client.phone || "").replace(/\D/g, "");
+        const num = digits ? (digits.length === 10 ? `91${digits}` : digits) : "";
+        window.open(`https://wa.me/${num}?text=${encodeURIComponent(text)}`, "_blank", "noopener");
+        setMsg("PDF downloaded. In WhatsApp, press the attach (paperclip) button and pick the PDF.");
+      }
+    } catch (e) { setErr(e.message || "Could not prepare the PDF."); } finally { setBusy(false); }
+  };
   const copyLink = async () => {
     setErr(""); setMsg("");
     try {
@@ -197,7 +226,8 @@ function Editor({ initial, onBack, onSaved }) {
           <button className="adm-btn" onClick={pdf} disabled={busy || !f.client.name.trim()}>Save & download PDF</button>
           <button className="adm-btn" title="Saves and emails the PDF to the client" onClick={email} disabled={busy || !f.client.name.trim() || !f.client.email.trim()}>Email to client</button>
           {f.id && f.status !== "draft" && <button className="adm-btn adm-ghost dark" onClick={copyLink}>Copy client link</button>}
-          {f.id && waLink() && <a className="adm-btn adm-ghost dark" href={waLink()} target="_blank" rel="noreferrer">Message on WhatsApp</a>}
+          <button className="adm-btn" onClick={sendWhatsApp} disabled={busy || !f.client.name.trim()}>Send on WhatsApp with PDF</button>
+          {f.id && waLink() && <a className="adm-btn adm-ghost dark" href={waLink()} target="_blank" rel="noreferrer">WhatsApp text only</a>}
           {f.id && f.kind === "quotation" && <button className="adm-btn" onClick={convert}>Convert to invoice</button>}
           {f.id && <DeleteButton what={f.number} onConfirm={async () => { try { await adminApi.removeDoc(f.id); onSaved(); onBack(); } catch (e) { setErr(e.message); } }} />}
         </div>
