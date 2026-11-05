@@ -32,7 +32,7 @@ async function request(path, { method = "GET", body, auth = false, raw = false }
   if (!res.ok) {
     if (data && data.error) throw new ApiError(data.error, res.status);
     if (!BASE && (res.status === 404 || res.status === 405)) {
-      throw new ApiError("This website is not connected to its server yet (VITE_API_URL is not set on the host).", res.status);
+      throw new ApiError(auth ? "This website is not connected to its server yet (VITE_API_URL is not set on the host)." : "We could not send this right now. Please use the WhatsApp or email button below and we will get back to you.", res.status);
     }
     throw new ApiError(`The server did not respond properly (HTTP ${res.status}). It may be waking up — please try again in a minute.`, res.status);
   }
