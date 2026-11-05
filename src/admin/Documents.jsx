@@ -73,6 +73,7 @@ function Editor({ initial, onBack, onSaved }) {
   };
   /* WhatsApp links cannot carry files, so on phones we open the share sheet with the PDF attached
      (pick WhatsApp and the customer). On a computer the PDF is downloaded and WhatsApp opens with the text. */
+  const [wa, setWa] = useState(null); // { text, url } of the last WhatsApp send, so the message can be sent on its own
   const sendWhatsApp = async () => {
     setErr(""); setMsg("");
     const saved = await save();
@@ -84,18 +85,20 @@ function Editor({ initial, onBack, onSaved }) {
       const st = computeTotals(saved);
       const text = `Hello ${saved.client.name}, your ${saved.kind} ${saved.number} for your ${saved.eventType || "event"} is ready. Total: ${inr(st.total)}.` +
         ` Advance on confirmation: ${inr(paymentSchedule(st.total, saved.advancePercent)[0].amount)}. View online: ${link} Thank you — Signature Stories`;
+      const digits = (saved.client.phone || "").replace(/\D/g, "");
+      const chat = `https://wa.me/${digits ? (digits.length === 10 ? `91${digits}` : digits) : ""}?text=${encodeURIComponent(text)}`;
+      setWa({ text, chat });
+      try { await navigator.clipboard.writeText(text); } catch { /* clipboard may be unavailable */ }
       const { pdfBlob } = await import("./pdf.js");
       const file = new File([await pdfBlob(saved)], `${saved.number}.pdf`, { type: "application/pdf" });
       if (navigator.canShare?.({ files: [file] })) {
-        try { await navigator.share({ files: [file], text }); setMsg("Shared. Choose WhatsApp and the customer in the share sheet."); }
+        try { await navigator.share({ files: [file], text }); setMsg("Shared. WhatsApp sometimes drops the text when a PDF is attached — the message is copied, so paste it, or use \"Send the message\" below."); }
         catch (e) { if (e?.name !== "AbortError") throw e; }
       } else {
         const url = URL.createObjectURL(file);
         const a = Object.assign(document.createElement("a"), { href: url, download: file.name });
         document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 5000);
-        const digits = (saved.client.phone || "").replace(/\D/g, "");
-        const num = digits ? (digits.length === 10 ? `91${digits}` : digits) : "";
-        window.open(`https://wa.me/${num}?text=${encodeURIComponent(text)}`, "_blank", "noopener");
+        window.open(chat, "_blank", "noopener");
         setMsg("PDF downloaded. In WhatsApp, press the attach (paperclip) button and pick the PDF.");
       }
     } catch (e) { setErr(e.message || "Could not prepare the PDF."); } finally { setBusy(false); }
@@ -219,6 +222,7 @@ function Editor({ initial, onBack, onSaved }) {
         <label className="adm-label">{isInv ? "Notes" : "Terms and notes"}
           <textarea rows="3" value={f.notes} onChange={set("notes")} placeholder="Shown at the bottom of the PDF" />
         </label>
+        {wa && <p className="adm-ok"><a className="adm-btn adm-ghost dark" href={wa.chat} target="_blank" rel="noreferrer">Send the message on WhatsApp</a> (opens the customer's chat with the text ready, message also copied)</p>}
         {err && <p className="adm-err" role="alert">{err}</p>}
         {msg && <p className="adm-ok" role="status">{msg}</p>}
         <div className="adm-actions">
