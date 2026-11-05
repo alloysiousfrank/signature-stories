@@ -102,7 +102,7 @@ export function createApp({ env, inquiryRepo, adminRepo, consultRepo, docRepo, p
   const loginLimit = rateLimits ? limiter(15 * 60e3, 10, "Too many attempts. Please try again later.") : noop;
   const auth = requireAuth(env, adminRepo);
   const push = (payload) => notifyAdmins({ pushRepo: pushRepo || { all: async () => [], remove: async () => {} }, pushSender }, payload);
-  const siteBase = () => env.clientOrigins.find((o) => !/localhost|127\.0\.0\.1/.test(o)) || env.clientOrigins[0] || "";
+  const siteBase = () => env.clientOrigins.find((o) => !/localhost|127\.0\.0\.1/.test(o)) || env.clientOrigins[0] || "https://signature-stories-qtsb.vercel.app";
   const shareLink = (token) => `${siteBase()}/#/q/${token}`;
   const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 

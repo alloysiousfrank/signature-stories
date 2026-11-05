@@ -1,6 +1,7 @@
 /* Small API client. In dev, Vite proxies /api to the local server;
    in production set VITE_API_URL to the deployed API (no trailing slash). */
-const BASE = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+// Falls back to the live API when the host has no VITE_API_URL, so a missing setting can never break the site.
+const BASE = (import.meta.env.VITE_API_URL || (import.meta.env.PROD ? "https://signature-stories-api.onrender.com" : "")).replace(/\/$/, "");
 export const TOKEN_KEY = "ss_admin_token";
 
 export const getToken = () => { try { return localStorage.getItem(TOKEN_KEY) || ""; } catch { return ""; } };
