@@ -28,7 +28,7 @@ export function Quote({ query }) {
     "Quotation request — Signature Stories",
     `Name: ${form.name}`, form.phone && `Phone: ${form.phone}`, form.email && `Email: ${form.email}`,
     `Event: ${form.type}`, form.date && `Date: ${form.date}`, form.venue && `Venue: ${form.venue}`,
-    `Guests: about ${form.guests}`, `Budget: ${inr(form.budget)}`,
+    `Guests: about ${Number(form.guests) >= 1000 ? "1000+" : form.guests}`, `Budget: ${inr(form.budget)}`,
     form.services.length ? `Services: ${form.services.join(", ")}` : "", form.notes,
   ].filter(Boolean).join("\n");
   const waHref = WHATSAPP_NUMBER ? `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(summary)}` : "";
@@ -107,13 +107,13 @@ export function Quote({ query }) {
         <input type="text" placeholder="Venue or city (optional)" value={form.venue} onChange={set("venue")} />
 
         <label className="guest-field">
-          <span>Approximate guests <strong>{form.guests}</strong></span>
-          <input type="range" min="10" max="1000" step="10" value={form.guests} onChange={set("guests")} style={{ "--fill": `${((form.guests - 10) / 990) * 100}%` }} />
+          <span>Approximate guests <strong>{Number(form.guests) >= 1000 ? "1000+" : form.guests}</strong></span>
+          <input type="range" min="100" max="1000" step="50" value={form.guests} onChange={set("guests")} style={{ "--fill": `${((form.guests - 100) / 900) * 100}%` }} />
         </label>
         <div className="estimator glass-card">
           <label className="guest-field">
             <span>Your budget <strong>{inr(form.budget)}</strong></span>
-            <input type="range" min="25000" max="5000000" step="25000" value={form.budget} onChange={set("budget")} style={{ "--fill": `${((form.budget - 25000) / 4975000) * 100}%` }} />
+            <input type="range" min="300000" max="5000000" step="25000" value={form.budget} onChange={set("budget")} style={{ "--fill": `${((form.budget - 300000) / 4700000) * 100}%` }} />
           </label>
           <p className="est-result">Indicative range <strong>{inr(est.low)} – {inr(est.high)}</strong><small>Your exact quotation follows after we review.</small></p>
         </div>

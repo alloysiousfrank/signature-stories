@@ -33,9 +33,9 @@ export const EVENTS = [
     ],
     moments: ["The grand entrance", "Floral mandap and aisle", "Candlelit reception dinner", "Farewell send-off"],
     packages: [
-      { name: "Essence", guests: "Up to 150 guests", points: ["Planning call and master timeline", "Vendor confirmations a week before", "Ceremony and reception run-of-show", "On-site coordinator plus assistant", "Setup and teardown supervision"] },
-      { name: "Signature", featured: true, guests: "Up to 400 guests", points: ["Concept, mood board and palette", "Venue shortlist and vendor curation", "Mandap, décor, florals and lighting design", "Guest hospitality and stay plan", "Dedicated planner with full on-site team", "Post-event wrap-up and vendor settlement"] },
-      { name: "Grand", guests: "400+ guests", points: ["End-to-end planning and creative direction", "Multi-day, multi-venue celebrations", "Travel, stays and guest logistics", "Custom stage, entertainment and production", "Dedicated team of planners and stylists", "Priority support, 24/7 in the final week"] },
+      { name: "Essence", guests: "450+ guests", points: ["Planning call and master timeline", "Vendor confirmations a week before", "Ceremony and reception run-of-show", "On-site coordinator plus assistant", "Setup and teardown supervision"] },
+      { name: "Signature", featured: true, guests: "750+ guests", points: ["Concept, mood board and palette", "Venue shortlist and vendor curation", "Mandap, décor, florals and lighting design", "Guest hospitality and stay plan", "Dedicated planner with full on-site team", "Post-event wrap-up and vendor settlement"] },
+      { name: "Grand", guests: "1500+ guests", points: ["End-to-end planning and creative direction", "Multi-day, multi-venue celebrations", "Travel, stays and guest logistics", "Custom stage, entertainment and production", "Dedicated team of planners and stylists", "Priority support, 24/7 in the final week"] },
     ],
     faqs: [
       { q: "Can you work with our family's traditions?", a: "Always. We sit with both families first and build the rituals, timing and styling around them." },
@@ -58,9 +58,9 @@ export const EVENTS = [
     ],
     moments: ["The surprise reveal", "Ring exchange backdrop", "Candlelit family dinner", "Photo-ready floral corners"],
     packages: [
-      { name: "Essence", guests: "Up to 60 guests", points: ["Planning call and timeline", "Vendor coordination", "Day-of coordinator", "Ring-ceremony run-of-show"] },
-      { name: "Signature", featured: true, guests: "Up to 150 guests", points: ["Concept, palette and backdrop design", "Floral and lighting styling", "Menu and dessert curation", "Photo and video briefing", "Dedicated planner and team"] },
-      { name: "Grand", guests: "150+ guests", points: ["Full creative direction", "Custom stage and entry design", "Entertainment and live music", "Guest hospitality plan", "Dedicated team on the evening"] },
+      { name: "Essence", guests: "450+ guests", points: ["Planning call and timeline", "Vendor coordination", "Day-of coordinator", "Ring-ceremony run-of-show"] },
+      { name: "Signature", featured: true, guests: "750+ guests", points: ["Concept, palette and backdrop design", "Floral and lighting styling", "Menu and dessert curation", "Photo and video briefing", "Dedicated planner and team"] },
+      { name: "Grand", guests: "1500+ guests", points: ["Full creative direction", "Custom stage and entry design", "Entertainment and live music", "Guest hospitality plan", "Dedicated team on the evening"] },
     ],
     faqs: [
       { q: "Can you plan a surprise proposal?", a: "Yes. We coordinate the location, timing, photographer and cover story so the surprise stays a surprise." },
@@ -83,9 +83,9 @@ export const EVENTS = [
     ],
     moments: ["The reveal", "Cake-cutting moment", "Dessert table showpiece", "Memory-lane video wall"],
     packages: [
-      { name: "Essence", guests: "Up to 50 guests", points: ["Theme consultation", "Balloon and backdrop styling", "Cake table setup", "Day-of coordinator"] },
-      { name: "Signature", featured: true, guests: "Up to 120 guests", points: ["Full theme and décor design", "Custom dessert table", "Hosts, games and entertainment", "Photo corner and keepsakes", "Dedicated planner and team"] },
-      { name: "Grand", guests: "120+ guests", points: ["Bespoke concept and production", "Stage, lighting and sound", "Live acts and performers", "Return gifts and guest experience", "Full on-site team"] },
+      { name: "Essence", guests: "450+ guests", points: ["Theme consultation", "Balloon and backdrop styling", "Cake table setup", "Day-of coordinator"] },
+      { name: "Signature", featured: true, guests: "750+ guests", points: ["Full theme and décor design", "Custom dessert table", "Hosts, games and entertainment", "Photo corner and keepsakes", "Dedicated planner and team"] },
+      { name: "Grand", guests: "1500+ guests", points: ["Bespoke concept and production", "Stage, lighting and sound", "Live acts and performers", "Return gifts and guest experience", "Full on-site team"] },
     ],
     faqs: [
       { q: "Do you plan kids' birthdays?", a: "Yes — themed décor, games, hosts and safe, parent-friendly flow, with a calm team on the day." },
@@ -108,9 +108,9 @@ export const EVENTS = [
     ],
     moments: ["The toast", "A film of your years", "Vow renewal", "First dance, again"],
     packages: [
-      { name: "Essence", guests: "Up to 40 guests", points: ["Planning call", "Table styling and florals", "Day-of coordinator", "Run-of-show"] },
-      { name: "Signature", featured: true, guests: "Up to 120 guests", points: ["Concept and memory display", "Floral and lighting design", "Menu curation and pairing", "Live music coordination", "Dedicated planner and team"] },
-      { name: "Grand", guests: "120+ guests", points: ["Full creative direction", "Vow-renewal ceremony design", "Custom film and stage production", "Guest hospitality", "Full on-site team"] },
+      { name: "Essence", guests: "450+ guests", points: ["Planning call", "Table styling and florals", "Day-of coordinator", "Run-of-show"] },
+      { name: "Signature", featured: true, guests: "750+ guests", points: ["Concept and memory display", "Floral and lighting design", "Menu curation and pairing", "Live music coordination", "Dedicated planner and team"] },
+      { name: "Grand", guests: "1500+ guests", points: ["Full creative direction", "Vow-renewal ceremony design", "Custom film and stage production", "Guest hospitality", "Full on-site team"] },
     ],
     faqs: [
       { q: "Can children and grandchildren take part?", a: "Of course — we often weave in speeches, a slideshow and a family toast." },
@@ -134,9 +134,9 @@ export const EVENTS = [
     ],
     moments: ["The curtain-up launch", "Awards moment", "Client dinner", "Networking lounge"],
     packages: [
-      { name: "Essence", guests: "Up to 100 guests", points: ["Briefing and timeline", "Vendor coordination", "On-site coordinator", "Run-of-show"] },
-      { name: "Signature", featured: true, guests: "Up to 300 guests", points: ["Concept and brand styling", "Venue and vendor sourcing", "AV, stage and lighting design", "Registration and hospitality", "Dedicated planner and team", "Post-event report"] },
-      { name: "Grand", guests: "300+ guests", points: ["End-to-end production", "Multi-venue or multi-day programmes", "Custom stage and content", "Talent and entertainment", "Travel and delegate logistics", "Dedicated on-site crew"] },
+      { name: "Essence", guests: "450+ guests", points: ["Briefing and timeline", "Vendor coordination", "On-site coordinator", "Run-of-show"] },
+      { name: "Signature", featured: true, guests: "750+ guests", points: ["Concept and brand styling", "Venue and vendor sourcing", "AV, stage and lighting design", "Registration and hospitality", "Dedicated planner and team", "Post-event report"] },
+      { name: "Grand", guests: "1500+ guests", points: ["End-to-end production", "Multi-venue or multi-day programmes", "Custom stage and content", "Talent and entertainment", "Travel and delegate logistics", "Dedicated on-site crew"] },
     ],
     faqs: [
       { q: "Can you work to our brand guidelines?", a: "Yes. Send them over and every touchpoint — stage, signage, tables — is designed to match." },
@@ -159,9 +159,9 @@ export const EVENTS = [
     ],
     moments: ["Gender reveal", "Blessing ritual", "Dessert table", "Guest keepsakes"],
     packages: [
-      { name: "Essence", guests: "Up to 40 guests", points: ["Theme consultation", "Backdrop and table styling", "Day-of coordinator"] },
-      { name: "Signature", featured: true, guests: "Up to 100 guests", points: ["Full theme and décor design", "Games and hosts", "Custom dessert table", "Gender reveal staging", "Dedicated planner"] },
-      { name: "Grand", guests: "100+ guests", points: ["Bespoke concept and production", "Stage and lighting", "Entertainment", "Keepsakes and return gifts", "Full on-site team"] },
+      { name: "Essence", guests: "450+ guests", points: ["Theme consultation", "Backdrop and table styling", "Day-of coordinator"] },
+      { name: "Signature", featured: true, guests: "750+ guests", points: ["Full theme and décor design", "Games and hosts", "Custom dessert table", "Gender reveal staging", "Dedicated planner"] },
+      { name: "Grand", guests: "1500+ guests", points: ["Bespoke concept and production", "Stage and lighting", "Entertainment", "Keepsakes and return gifts", "Full on-site team"] },
     ],
     faqs: [
       { q: "Can you plan a traditional godh bharai?", a: "Yes — rituals, seating, styling and timing are planned with the family's guidance." },
@@ -184,9 +184,9 @@ export const EVENTS = [
     ],
     moments: ["The lighting ceremony", "Live cultural performance", "Festive feast", "Rangoli and floral entrance"],
     packages: [
-      { name: "Essence", guests: "Up to 100 guests", points: ["Planning call", "Festive décor setup", "On-site coordinator"] },
-      { name: "Signature", featured: true, guests: "Up to 300 guests", points: ["Concept and traditional styling", "Lighting and sound", "Artist and performer booking", "Food and stall curation", "Dedicated planner and team"] },
-      { name: "Grand", guests: "300+ guests", points: ["Full production and staging", "Multi-day festival programming", "Large-scale décor", "Safety and crowd management", "Dedicated on-site crew"] },
+      { name: "Essence", guests: "450+ guests", points: ["Planning call", "Festive décor setup", "On-site coordinator"] },
+      { name: "Signature", featured: true, guests: "750+ guests", points: ["Concept and traditional styling", "Lighting and sound", "Artist and performer booking", "Food and stall curation", "Dedicated planner and team"] },
+      { name: "Grand", guests: "1500+ guests", points: ["Full production and staging", "Multi-day festival programming", "Large-scale décor", "Safety and crowd management", "Dedicated on-site crew"] },
     ],
     faqs: [
       { q: "Do you handle community-scale events?", a: "Yes, including permissions guidance, crowd flow, safety and vendor management." },

@@ -15,8 +15,6 @@ import {
   Packages,
   Process,
   Promises,
-  Stats,
-  Testimonials,
 } from "./ui.jsx";
 
 function MomentsStrip() {
@@ -71,7 +69,7 @@ export function Home() {
           </h1>
           <p className="hero-description" data-reveal>
             Thoughtfully planned celebrations, beautifully remembered moments —
-            designed with care, delivered with grace.
+            designed with care, delivered with love.
           </p>
           <div className="hero-actions" data-reveal>
             <a className="contact-link" href="#/contact">Plan your event</a>
@@ -95,12 +93,10 @@ export function Home() {
         </div>
       </section>
 
-      <Stats />
       <Promises />
       <Reel />
       <MomentsStrip />
       <Process />
-      <Testimonials />
       <CtaBand />
     </>
   );
@@ -198,7 +194,7 @@ function buildSummary(f) {
     f.pkg ? `Package: ${f.pkg}` : null,
     `Budget: ${inr(f.budget)} (estimate ${inr(estimate(f).low)} – ${inr(estimate(f).high)})`,
     f.date ? `Date: ${f.date}` : null,
-    `Guests: about ${f.guests}`,
+    `Guests: about ${Number(f.guests) >= 1000 ? "1000+" : f.guests}`,
   ].filter(Boolean);
   return `${lines.join("\n")}${f.message ? `\n\n${f.message}` : ""}`;
 }
@@ -298,15 +294,15 @@ function ContactForm({ query }) {
       </div>
 
       <label className="guest-field">
-        <span>Approximate guests <strong>{form.guests}</strong></span>
+        <span>Approximate guests <strong>{Number(form.guests) >= 1000 ? "1000+" : form.guests}</strong></span>
         <input
           type="range"
-          min="10"
+          min="100"
           max="1000"
-          step="10"
+          step="50"
           value={form.guests}
           onChange={set("guests")}
-          style={{ "--fill": `${((form.guests - 10) / 990) * 100}%` }}
+          style={{ "--fill": `${((form.guests - 100) / 900) * 100}%` }}
         />
       </label>
 
@@ -322,13 +318,13 @@ function ContactForm({ query }) {
         <label className="guest-field">
           <span>Your budget <strong>{inr(form.budget)}</strong></span>
           <input
-            type="range" min="25000" max="5000000" step="25000" value={form.budget} onChange={set("budget")}
-            style={{ "--fill": `${((form.budget - 25000) / 4975000) * 100}%` }}
+            type="range" min="300000" max="5000000" step="25000" value={form.budget} onChange={set("budget")}
+            style={{ "--fill": `${((form.budget - 300000) / 4700000) * 100}%` }}
           />
         </label>
         <p className="est-result">
           Indicative estimate <strong>{inr(est.low)} – {inr(est.high)}</strong>
-          <small>for about {form.guests} guests. {verdict(Number(form.budget), est)} Final pricing is quoted after we talk.</small>
+          <small>for about {Number(form.guests) >= 1000 ? "1000+" : form.guests} guests. {verdict(Number(form.budget), est)} Final pricing is quoted after we talk.</small>
         </p>
       </div>
 

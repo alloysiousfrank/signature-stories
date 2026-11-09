@@ -64,7 +64,7 @@ const docSchema = z.object({
     qty: z.coerce.number().min(0).max(100000),
     rate: z.coerce.number().min(0).max(1e9),
   })).min(1).max(60),
-  gstPercent: z.coerce.number().min(0).max(40).optional().default(18),
+  gstPercent: z.coerce.number().min(0).max(40).optional().default(0),
   discount: z.coerce.number().min(0).optional().default(0),
   issueDate: z.string().refine(isIsoDate),
   dueDate: isoOrEmpty.optional().default(""),

@@ -76,7 +76,7 @@ export const PACKAGES = [
     name: "Essence",
     tag: "Day-of coordination",
     ideal: "Ideal for couples and hosts who have planned most of it already.",
-    guests: "Up to 150 guests",
+    guests: "450+ guests",
     points: [
       "Planning call and detailed timeline",
       "Vendor confirmation one week before",
@@ -90,7 +90,7 @@ export const PACKAGES = [
     tag: "Most loved",
     featured: true,
     ideal: "Ideal for those who want a designed, stress-free celebration.",
-    guests: "Up to 400 guests",
+    guests: "750+ guests",
     points: [
       "Concept, mood board and palette",
       "Venue shortlist and vendor curation",
@@ -104,7 +104,7 @@ export const PACKAGES = [
     name: "Grand",
     tag: "Complete bespoke",
     ideal: "Ideal for multi-day weddings, destination events and large galas.",
-    guests: "400+ guests",
+    guests: "1500+ guests",
     points: [
       "End-to-end planning and creative direction",
       "Multi-day and multi-venue celebrations",

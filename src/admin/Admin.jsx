@@ -8,7 +8,7 @@ import Consultations from "./Consultations.jsx";
 import Documents from "./Documents.jsx";
 import DeleteButton from "./DeleteButton.jsx";
 import Reports from "./Reports.jsx";
-import { inr } from "./shared.js";
+import { inr, inr0 } from "./shared.js";
 import { chimeOn, disablePush, enablePush, pushState, setChime } from "./notify.js";
 import "./admin.css";
 
@@ -57,18 +57,38 @@ function Dashboard() {
   useEffect(() => { adminApi.stats().then(setS).catch((e) => setErr(e.message)); }, []);
   if (err) return <p className="adm-err">{err}</p>;
   if (!s) return <p className="adm-muted">Loading…</p>;
-  const tiles = [
-    ["Total enquiries", s.total], ["New (unanswered)", s.status.new], ["Booked events", s.status.booked],
-    ["Consultations to confirm", s.pendingConsultations], ["Invoices awaiting payment", s.outstanding.count],
-    ["Outstanding amount", inr(s.outstanding.amount)],
-    [`Gross invoiced ${s.revenue.year}`, inr(s.revenue.invoiced)], [`Collected ${s.revenue.year}`, inr(s.revenue.collected)],
+  const attention = [
+    ["New enquiries", s.status.new, "Waiting for your reply", "#/admin/inquiries"],
+    ["Consultations to confirm", s.pendingConsultations, "Online bookings to approve", "#/admin/consultations"],
+    ["Invoices awaiting payment", s.outstanding.count, "Sent, not fully paid", "#/admin/invoices"],
+    ["Booked events", s.status.booked, "Confirmed events", "#/admin/calendar"],
+  ];
+  const money = [
+    ["Still to receive", inr0(s.outstanding.amount), "From sent invoices"],
+    [`Invoiced in ${s.revenue.year}`, inr0(s.revenue.invoiced), "Total value of invoices"],
+    [`Received in ${s.revenue.year}`, inr0(s.revenue.collected), "Money collected so far"],
   ];
   const max = Math.max(1, ...s.byType.map((t) => t.count));
   return (
     <>
-      <h1>Dashboard</h1>
+      <div className="adm-head">
+        <div><h1>Dashboard</h1><p className="adm-muted">Welcome back, {FIRST_NAME}. Here is what needs you today.</p></div>
+        <div className="adm-actions">
+          <a className="adm-btn" href="#/admin/quotations?new=1">+ New quotation</a>
+          <a className="adm-btn adm-ghost dark" href="#/admin/invoices?new=1">+ New invoice</a>
+        </div>
+      </div>
+      <h2 className="adm-section">Needs your attention</h2>
       <div className="adm-tiles">
-        {tiles.map(([l, v]) => <div className="adm-card adm-tile" key={l}><strong>{v}</strong><span>{l}</span></div>)}
+        {attention.map(([l, v, hint, href]) => (
+          <a className={`adm-card adm-tile link${v > 0 && l !== "Booked events" ? " hot" : ""}`} href={href} key={l}>
+            <strong>{v}</strong><span>{l}</span><small>{hint}</small>
+          </a>
+        ))}
+      </div>
+      <h2 className="adm-section">Money</h2>
+      <div className="adm-tiles wide">
+        {money.map(([l, v, hint]) => <div className="adm-card adm-tile" key={l}><strong>{v}</strong><span>{l}</span><small>{hint}</small></div>)}
       </div>
       <div className="adm-card">
         <h2>Enquiries by event</h2>
@@ -297,7 +317,7 @@ function NotifySettings() {
   );
 }
 
-const FIRST_NAME = BUSINESS.owner.split(" ")[0];
+const FIRST_NAME = "Anbu";
 
 const NAV = [
   ["dashboard", "Dashboard"], ["inquiries", "Enquiries"], ["calendar", "Calendar"], ["consultations", "Consultations"],

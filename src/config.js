@@ -7,7 +7,7 @@ export const BUSINESS = {
   name: "Signature Stories Event Planner",
   short: "Signature Stories",
   tagline: "Crafting occasions worth remembering.",
-  owner: "Anbu Raja",
+  owner: "Anburaja Arul",
   ownerRole: "Founder & Lead Planner",
   phone: "+91 88701 84906",
   address: "Tiruppur",

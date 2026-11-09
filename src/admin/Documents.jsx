@@ -16,7 +16,7 @@ const blank = (kind) => {
   const issueDate = isoToday();
   return {
     kind, status: "draft", client: { name: "", email: "", phone: "", address: "" }, eventType: "", eventDate: "", venue: "",
-    items: [{ description: "", qty: 1, rate: 0 }], gstPercent: 18, discount: 0, advancePercent: 50, paymentTerms: "", issueDate,
+    items: [{ description: "", qty: 1, rate: 0 }], gstPercent: 0, discount: 0, advancePercent: 50, paymentTerms: "", issueDate,
     dueDate: addDays(issueDate, kind === "invoice" ? 7 : 15), notes: "", inquiryId: "",
   };
 };
@@ -173,11 +173,11 @@ function Editor({ initial, onBack, onSaved }) {
 
         <div className="adm-totals">
           <label className="adm-label">Discount (Rs.)<input type="number" min="0" value={f.discount} onChange={set("discount")} /></label>
-          <label className="adm-label">GST %<input type="number" min="0" max="40" value={f.gstPercent} onChange={set("gstPercent")} /></label>
+          <label className="adm-label">GST % (optional)<input type="number" min="0" max="40" value={f.gstPercent} onChange={set("gstPercent")} /></label>
           <dl>
             <dt>Subtotal</dt><dd>{inr(t.subtotal)}</dd>
             {t.discount > 0 && <><dt>Discount</dt><dd>- {inr(t.discount)}</dd></>}
-            <dt>GST ({f.gstPercent || 0}%)</dt><dd>{inr(t.tax)}</dd>
+            {Number(f.gstPercent) > 0 && <><dt>GST ({f.gstPercent}%)</dt><dd>{inr(t.tax)}</dd></>}
             <dt className="grand">Total</dt><dd className="grand">{inr(t.total)}</dd>
           </dl>
         </div>
@@ -253,6 +253,14 @@ export default function Documents({ kind, query }) {
   }, [kind, page, filters]);
   useEffect(() => { load(); }, [load]);
   useEffect(() => { setView(null); setPage(1); setFilters({ status: "", q: "" }); }, [kind]);
+
+  // "+ New quotation / invoice" shortcuts from the dashboard arrive as ?new=1
+  const wantsNew = query?.get("new");
+  useEffect(() => {
+    if (!wantsNew) return;
+    setView(blank(kind));
+    window.history.replaceState(null, "", `#/admin/${kind === "invoice" ? "invoices" : "quotations"}`);
+  }, [wantsNew, kind]);
 
   // "Create quotation" from an enquiry arrives as #/admin/quotations?inquiry=<id>
   const inquiryId = query?.get("inquiry");

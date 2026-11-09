@@ -33,8 +33,8 @@ export default function Reports() {
   const t = rep?.totals;
   const max = rep ? Math.max(1, ...rep.months.map((m) => m.invoiced)) : 1;
   const tiles = t ? [
-    ["Gross invoiced (incl. GST)", inr(t.invoiced)], ["Collected (paid)", inr(t.collected)],
-    ["Outstanding (sent)", inr(t.outstanding)], ["GST in invoices", inr(t.gst)], ["Net revenue (excl. GST)", inr(t.net)],
+    ["Total invoiced", inr(t.invoiced)], ["Collected (paid)", inr(t.collected)],
+    ["Outstanding (sent)", inr(t.outstanding)], ...(t.gst > 0 ? [["GST in invoices", inr(t.gst)], ["Net revenue (excl. GST)", inr(t.net)]] : []),
   ] : [];
 
   return (
@@ -73,12 +73,12 @@ export default function Reports() {
             </div>
             <div className="adm-tablewrap">
               <table className="adm-table">
-                <thead><tr><th>Month</th><th>Invoices</th><th>Gross invoiced</th><th>Collected</th><th>Outstanding</th><th>GST</th></tr></thead>
+                <thead><tr><th>Month</th><th>Invoices</th><th>Gross invoiced</th><th>Collected</th><th>Outstanding</th>{t.gst > 0 && <th>GST</th>}</tr></thead>
                 <tbody>
                   {rep.months.map((m, i) => (
-                    <tr key={m.month} className="static"><td>{MON[i]}</td><td>{m.count}</td><td>{inr(m.invoiced)}</td><td>{inr(m.collected)}</td><td>{inr(m.outstanding)}</td><td>{inr(m.gst)}</td></tr>
+                    <tr key={m.month} className="static"><td>{MON[i]}</td><td>{m.count}</td><td>{inr(m.invoiced)}</td><td>{inr(m.collected)}</td><td>{inr(m.outstanding)}</td>{t.gst > 0 && <td>{inr(m.gst)}</td>}</tr>
                   ))}
-                  <tr className="static total"><td><b>Total</b></td><td><b>{t.count}</b></td><td><b>{inr(t.invoiced)}</b></td><td><b>{inr(t.collected)}</b></td><td><b>{inr(t.outstanding)}</b></td><td><b>{inr(t.gst)}</b></td></tr>
+                  <tr className="static total"><td><b>Total</b></td><td><b>{t.count}</b></td><td><b>{inr(t.invoiced)}</b></td><td><b>{inr(t.collected)}</b></td><td><b>{inr(t.outstanding)}</b></td>{t.gst > 0 && <td><b>{inr(t.gst)}</b></td>}</tr>
                 </tbody>
               </table>
             </div>
