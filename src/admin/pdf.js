@@ -51,7 +51,7 @@ export async function buildPdf(doc) {
   pdf.setFontSize(8.5); pdf.setTextColor(...GOLD_DARK); pdf.setFont("Cinzel", "normal");
   pdf.text("FROM", M, y); pdf.text(isInv ? "BILLED TO" : "PREPARED FOR", W / 2 + 4, y);
   pdf.setFont("Cormorant", "normal"); pdf.setTextColor(...INK); pdf.setFontSize(11.5);
-  const from = [BUSINESS.name, ...pdf.splitTextToSize(BUSINESS.address, W / 2 - M - 6), `Phone: ${BUSINESS.phone}`, `GSTIN: ${BUSINESS.gstin}`];
+  const from = [BUSINESS.name, ...pdf.splitTextToSize(BUSINESS.address, W / 2 - M - 6), `Phone: ${BUSINESS.phone}`];
   pdf.text(from, M, y + 6);
   const c = doc.client;
   const to = [c.name, ...(c.address ? pdf.splitTextToSize(c.address, W / 2 - M - 6) : []), c.phone && `Phone: ${c.phone}`, c.email].filter(Boolean);

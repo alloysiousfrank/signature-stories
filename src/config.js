@@ -12,7 +12,6 @@ export const BUSINESS = {
   phone: "+91 88701 84906",
   address: "Tiruppur",
   hours: "Mon – Sat · 10:00 AM – 7:00 PM",
-  gstin: "33ABCDE1234F1Z5",
   upiId: "signaturestories@upi", // dummy: shown as a QR code on invoices
 };
 
