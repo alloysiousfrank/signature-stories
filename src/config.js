@@ -12,7 +12,8 @@ export const BUSINESS = {
   phone: "+91 88701 84906",
   address: "Tiruppur",
   hours: "Mon – Sat · 10:00 AM – 7:00 PM",
-  upiId: "signaturestories@upi", // dummy: shown as a QR code on invoices
+  upiId: "anburaja.arul-1@okaxis", // each invoice PDF gets a QR for this ID with that invoice's balance filled in
+  upiName: "Anburaja Arul",
 };
 
 // Contact channels. WhatsApp opens a click-to-chat (no Meta Business API needed).

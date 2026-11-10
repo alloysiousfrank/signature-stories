@@ -119,7 +119,7 @@ export async function buildPdf(doc) {
 
   // payment QR (invoices) + notes
   if (isInv && balance > 0 && doc.status !== "cancelled" && BUSINESS.upiId) {
-    const upi = `upi://pay?pa=${encodeURIComponent(BUSINESS.upiId)}&pn=${encodeURIComponent(BUSINESS.short)}&am=${balance.toFixed(2)}&cu=INR&tn=${encodeURIComponent(doc.number)}`;
+    const upi = `upi://pay?pa=${encodeURIComponent(BUSINESS.upiId)}&pn=${encodeURIComponent(BUSINESS.upiName)}&am=${balance.toFixed(2)}&cu=INR&tn=${encodeURIComponent(doc.number)}`;
     const qr = await QR.toDataURL(upi, { margin: 1, width: 300, color: { dark: "#242019", light: "#ffffff" } });
     if (ny + 40 > H - 24) { pdf.addPage(); ny = 20; }
     pdf.addImage(qr, "PNG", M, ny, 32, 32);
