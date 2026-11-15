@@ -370,7 +370,7 @@ export function Contact({ query }) {
           <p>{BUSINESS.hours}</p>
         </div>
         <div>
-          <p className="eyebrow">OWNER</p>
+          <p className="eyebrow">CONTACT</p>
           <h2>{BUSINESS.owner}</h2>
           <p>{BUSINESS.ownerRole}</p>
           <p><a className="text-link" href={`tel:${BUSINESS.phone.replace(/\s/g, "")}`}>{BUSINESS.phone}</a></p>
