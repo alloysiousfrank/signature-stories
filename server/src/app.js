@@ -58,6 +58,7 @@ const docSchema = z.object({
   }),
   eventType: z.string().trim().max(60).optional().default(""),
   eventDate: isoOrEmpty.optional().default(""),
+  eventEndDate: isoOrEmpty.optional().default(""),
   venue: z.string().trim().max(200).optional().default(""),
   items: z.array(z.object({
     description: z.string().trim().min(1).max(300),
@@ -315,7 +316,7 @@ export function createApp({ env, inquiryRepo, adminRepo, consultRepo, docRepo, p
   }));
 
   const publicDoc = (d) => ({
-    kind: d.kind, number: d.number, status: d.status, issueDate: d.issueDate, dueDate: d.dueDate, eventType: d.eventType, eventDate: d.eventDate, venue: d.venue,
+    kind: d.kind, number: d.number, status: d.status, issueDate: d.issueDate, dueDate: d.dueDate, eventType: d.eventType, eventDate: d.eventDate, eventEndDate: d.eventEndDate, venue: d.venue,
     client: { name: d.client?.name || "" }, items: d.items, subtotal: d.subtotal, discount: d.discount, taxable: d.taxable, gstPercent: d.gstPercent, tax: d.tax, total: d.total,
     advancePercent: d.advancePercent, paymentTerms: d.paymentTerms, notes: d.notes, amountPaid: paidSum(d), balance: balanceOf(d), respondedAt: d.respondedAt || null,
   });

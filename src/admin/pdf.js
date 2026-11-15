@@ -59,10 +59,13 @@ export async function buildPdf(doc) {
   y += 6 + Math.max(from.length, to.length) * 5 + 4;
 
   if (doc.eventType || doc.eventDate || doc.venue) {
-    pdf.setFillColor(251, 246, 232); pdf.roundedRect(M, y, W - 2 * M, 12, 2, 2, "F");
-    pdf.setFontSize(10.5); pdf.setTextColor(...INK);
-    pdf.text(`Event: ${doc.eventType || "—"}     Date: ${day(doc.eventDate)}     Venue: ${doc.venue || "—"}`, M + 4, y + 7.4);
-    y += 18;
+    const range = doc.eventEndDate && doc.eventEndDate !== doc.eventDate ? `${day(doc.eventDate)} to ${day(doc.eventEndDate)}` : day(doc.eventDate);
+    pdf.setFont("Cormorant", "normal"); pdf.setFontSize(10.5); pdf.setTextColor(...INK);
+    const lines = pdf.splitTextToSize(`Event: ${doc.eventType || "—"}     ${doc.eventEndDate && doc.eventEndDate !== doc.eventDate ? "Dates" : "Date"}: ${range}     Venue: ${doc.venue || "—"}`, W - 2 * M - 8);
+    const bh = 5 + lines.length * 5;
+    pdf.setFillColor(251, 246, 232); pdf.roundedRect(M, y, W - 2 * M, bh, 2, 2, "F");
+    pdf.text(lines, M + 4, y + 6.4);
+    y += bh + 6;
   }
 
   autoTable(pdf, {

@@ -15,7 +15,7 @@ const LABEL = { invoice: "Invoice", quotation: "Quotation" };
 const blank = (kind) => {
   const issueDate = isoToday();
   return {
-    kind, status: "draft", client: { name: "", email: "", phone: "", address: "" }, eventType: "", eventDate: "", venue: "",
+    kind, status: "draft", client: { name: "", email: "", phone: "", address: "" }, eventType: "", eventDate: "", eventEndDate: "", venue: "",
     items: [{ description: "", qty: 1, rate: 0 }], gstPercent: 0, discount: 0, advancePercent: 50, paymentTerms: "", issueDate,
     dueDate: addDays(issueDate, kind === "invoice" ? 7 : 15), notes: "", inquiryId: "",
   };
@@ -145,9 +145,10 @@ function Editor({ initial, onBack, onSaved }) {
         <h2>Event</h2>
         <div className="adm-grid3">
           <select value={f.eventType} onChange={set("eventType")}><option value="">Event type</option>{EVENT_TYPES.map((e) => <option key={e}>{e}</option>)}</select>
-          <label className="adm-label">Event date<input type="date" value={f.eventDate} onChange={set("eventDate")} /></label>
-          <input placeholder="Venue" value={f.venue} onChange={set("venue")} />
+          <label className="adm-label">Event from date<input type="date" value={f.eventDate} onChange={(e) => setF({ ...f, eventDate: e.target.value, eventEndDate: f.eventEndDate && f.eventEndDate < e.target.value ? "" : f.eventEndDate })} /></label>
+          <label className="adm-label">Event to date<input type="date" value={f.eventEndDate || ""} min={f.eventDate || undefined} onChange={set("eventEndDate")} /></label>
         </div>
+        <input placeholder="Venue" value={f.venue} onChange={set("venue")} />
         <div className="adm-grid3">
           <label className="adm-label">Issue date<input type="date" value={f.issueDate} onChange={set("issueDate")} /></label>
           <label className="adm-label">{isInv ? "Due date" : "Valid until"}<input type="date" value={f.dueDate} onChange={set("dueDate")} /></label>

@@ -149,3 +149,4 @@
 .adm-agenda li{position:relative}.adm-agenda li .adm-x2{position:absolute;right:.5rem;top:.5rem}
 .adm-payform{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.5rem;margin-top:.7rem}
 .adm-check{display:flex;gap:.6rem;align-items:flex-start;margin:.8rem 0}.adm-check input{margin-top:.3rem}
+.adm-grid3{align-items:end}

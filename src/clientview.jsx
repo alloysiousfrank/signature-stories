@@ -42,7 +42,7 @@ export function ClientView({ token }) {
             <p className="cv-eyebrow">{isQuote ? "QUOTATION" : "INVOICE"} · {doc.number}</p>
             <h1>Hello {doc.client.name}</h1>
             <p className="cv-muted">
-              {doc.eventType ? `${doc.eventType}` : "Your event"}{doc.eventDate ? ` · ${day(doc.eventDate)}` : ""}{doc.venue ? ` · ${doc.venue}` : ""}
+              {doc.eventType ? `${doc.eventType}` : "Your event"}{doc.eventDate ? ` · ${day(doc.eventDate)}${doc.eventEndDate && doc.eventEndDate !== doc.eventDate ? ` to ${day(doc.eventEndDate)}` : ""}` : ""}{doc.venue ? ` · ${doc.venue}` : ""}
             </p>
             <table className="cv-table">
               <thead><tr><th>Description</th><th>Qty</th><th>Amount</th></tr></thead>

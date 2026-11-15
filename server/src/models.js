@@ -84,6 +84,7 @@ const documentSchema = new mongoose.Schema({
   },
   eventType: { type: String, trim: true, maxlength: 60, default: "" },
   eventDate: { type: String, default: "" },
+  eventEndDate: { type: String, default: "" },
   venue: { type: String, trim: true, maxlength: 200, default: "" },
   items: { type: [itemSchema], default: [] },
   gstPercent: { type: Number, min: 0, max: 40, default: 18 },

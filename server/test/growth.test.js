@@ -82,3 +82,11 @@ test("reminders: sent once per stage, skip paid, need 8am IST", async () => {
   assert.ok(a.remindersSent.includes("inv-3"));
   assert.ok(mails.some((m) => /Payment reminder/.test(m.subject)));
 });
+
+test("event end date is saved and shown on the client page", async () => {
+  const { app } = makeApp(); const t = await login(app);
+  const d = (await request(app).post("/api/admin/documents").set(H(t)).send(doc({ kind: "quotation", eventDate: "2026-12-10", eventEndDate: "2026-12-12" }))).body;
+  assert.equal(d.eventEndDate, "2026-12-12");
+  const { token } = (await request(app).post(`/api/admin/documents/${d.id}/share`).set(H(t))).body;
+  assert.equal((await request(app).get(`/api/public/doc/${token}`)).body.eventEndDate, "2026-12-12");
+});
