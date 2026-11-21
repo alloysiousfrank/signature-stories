@@ -30,3 +30,13 @@ export function paymentSchedule(total, advancePercent) {
     { label: `Balance (${100 - pct}%)`, amount: r2(total - advance), when: "Before the event, as per the payment terms" },
   ];
 }
+
+/* After a new release an already-open page can fail to load a lazy file. Reload to pick up the new version. */
+export function explainError(e, fallback = "Something went wrong.") {
+  const m = String(e?.message || "");
+  if (/dynamically imported module|Importing a module script failed|Failed to fetch|Loading chunk/i.test(m)) {
+    setTimeout(() => window.location.reload(), 900);
+    return "A new version was just released. Reloading the page...";
+  }
+  return m || fallback;
+}

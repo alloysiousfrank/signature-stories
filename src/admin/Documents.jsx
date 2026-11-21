@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { adminApi } from "../api.js";
 import { EVENT_TYPES } from "../content.js";
 import DeleteButton from "./DeleteButton.jsx";
-import { computeTotals, DOC_STATUSES, fmtDay, inr, isoToday, paymentSchedule } from "./shared.js";
+import { explainError, computeTotals, DOC_STATUSES, fmtDay, inr, isoToday, paymentSchedule } from "./shared.js";
 
 const LINE_SUGGESTIONS = [
   "Planning and coordination fee", "Venue décor and styling", "Stage and backdrop design", "Floral design",
@@ -50,7 +50,7 @@ function Editor({ initial, onBack, onSaved }) {
     const saved = await save();
     if (!saved) return;
     try { const { downloadPdf } = await import("./pdf.js"); await downloadPdf(saved); }
-    catch { setErr("Could not create the PDF."); }
+    catch (e) { setErr(explainError(e, "Could not create the PDF.")); }
   };
   const email = async () => {
     if (!f.client.email.trim()) { setErr("Add the client's email address first."); return; }
@@ -61,7 +61,7 @@ function Editor({ initial, onBack, onSaved }) {
       const { pdfBase64 } = await import("./pdf.js");
       const r = await adminApi.sendDoc(saved.id, await pdfBase64(saved));
       setF(r.document); setMsg(`Sent to ${saved.client.email}.`); onSaved();
-    } catch (e) { setErr(e.message); } finally { setBusy(false); }
+    } catch (e) { setErr(explainError(e)); } finally { setBusy(false); }
   };
   const waLink = () => {
     const digits = (f.client.phone || "").replace(/\D/g, "");
@@ -99,7 +99,7 @@ function Editor({ initial, onBack, onSaved }) {
         window.open(chat, "_blank", "noopener");
         setMsg("PDF downloaded. In WhatsApp, press the attach (paperclip) button and pick the PDF.");
       }
-    } catch (e) { setErr(e.message || "Could not prepare the PDF."); } finally { setBusy(false); }
+    } catch (e) { setErr(explainError(e, "Could not prepare the PDF.")); } finally { setBusy(false); }
   };
   const copyLink = async () => {
     setErr(""); setMsg("");
