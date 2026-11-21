@@ -10,7 +10,7 @@ import { inquiriesToCsv } from "./lib/csv.js";
 import { buildReport } from "./lib/report.js";
 import { notifyConsultation, notifyNewInquiry, sendDocumentEmail, sendMail } from "./services/notify.js";
 import { bookableDate, CONSULT_STATUSES, isIsoDate, isIsoMonth, MODES, SLOTS } from "./lib/slots.js";
-import { settle, paidSum, balanceOf } from "./lib/payments.js";
+import { settle, paidSum, balanceOf, paymentsOf } from "./lib/payments.js";
 import { notifyAdmins } from "./services/push.js";
 import { runReminders } from "./services/reminders.js";
 import crypto from "node:crypto";
@@ -254,12 +254,29 @@ export function createApp({ env, inquiryRepo, adminRepo, consultRepo, docRepo, p
     const { items, total } = await docRepo.list({ kind, status: req.query.status, q: req.query.q }, { page, limit: 20 });
     res.json({ items, total, page, pages: Math.max(1, Math.ceil(total / 20)) });
   }));
+  const fmtNumber = (kind, year, n) => `SS-${kind === "invoice" ? "INV" : "QUO"}-${year}-${String(n).padStart(4, "0")}`;
+  // Never hands out a number that already exists, even after the counter was reset.
+  const freshNumber = async (kind, year) => {
+    for (let i = 0; i < 200; i++) { const n = await docRepo.nextNumber(kind, year); if (!(await docRepo.numberExists(n))) return n; }
+    throw new Error("Could not find a free document number");
+  };
+  app.get("/api/admin/numbering", auth, wrap(async (_req, res) => {
+    const y = today().slice(0, 4);
+    res.json({ year: y, invoice: { last: await docRepo.counter("invoice", y) }, quotation: { last: await docRepo.counter("quotation", y) } });
+  }));
+  app.put("/api/admin/numbering", auth, wrap(async (req, res) => {
+    const y = today().slice(0, 4); const kind = req.body?.kind; const next = Number(req.body?.next);
+    if (!["invoice", "quotation"].includes(kind) || !Number.isInteger(next) || next < 1 || next > 99999) return res.status(400).json({ error: "Enter a whole number from 1 upwards." });
+    if (await docRepo.numberExists(fmtNumber(kind, y, next))) return res.status(409).json({ error: `${fmtNumber(kind, y, next)} already exists. Delete or finish with the older ${kind}s first, or choose a number that is free.` });
+    await docRepo.setCounter(kind, y, next - 1);
+    res.json({ next: fmtNumber(kind, y, next) });
+  }));
   app.post("/api/admin/documents", auth, wrap(async (req, res) => {
     const p = docSchema.safeParse(req.body);
     if (!p.success) return res.status(400).json({ error: "Please check the document details." });
     const d = p.data;
     const status = d.status && DOC_STATUSES[d.kind].includes(d.status) ? d.status : "draft";
-    const number = await docRepo.nextNumber(d.kind, d.issueDate.slice(0, 4));
+    const number = await freshNumber(d.kind, d.issueDate.slice(0, 4));
     res.status(201).json(await docRepo.create(withTotals({ ...d, status, number })));
   }));
   app.get("/api/admin/documents/:id", auth, wrap(async (req, res) => {
@@ -318,7 +335,7 @@ export function createApp({ env, inquiryRepo, adminRepo, consultRepo, docRepo, p
   const publicDoc = (d) => ({
     kind: d.kind, number: d.number, status: d.status, issueDate: d.issueDate, dueDate: d.dueDate, eventType: d.eventType, eventDate: d.eventDate, eventEndDate: d.eventEndDate, venue: d.venue,
     client: { name: d.client?.name || "" }, items: d.items, subtotal: d.subtotal, discount: d.discount, taxable: d.taxable, gstPercent: d.gstPercent, tax: d.tax, total: d.total,
-    advancePercent: d.advancePercent, paymentTerms: d.paymentTerms, notes: d.notes, amountPaid: paidSum(d), balance: balanceOf(d), respondedAt: d.respondedAt || null,
+    advancePercent: d.advancePercent, paymentTerms: d.paymentTerms, notes: d.notes, amountPaid: paidSum(d), balance: balanceOf(d), payments: d.kind === "invoice" ? paymentsOf(d).map((p) => ({ date: p.date, amount: p.amount, method: p.method })) : [], respondedAt: d.respondedAt || null,
   });
   const viewLimit = rateLimits ? limiter(15 * 60e3, 120, "Too many requests.") : noop;
   app.get("/api/public/doc/:token", viewLimit, wrap(async (req, res) => {
@@ -403,9 +420,9 @@ export function createApp({ env, inquiryRepo, adminRepo, consultRepo, docRepo, p
     const q = await docRepo.get(req.params.id);
     if (!q || q.kind !== "quotation") return res.status(404).json({ error: "Quotation not found" });
     const issueDate = today();
-    const number = await docRepo.nextNumber("invoice", issueDate.slice(0, 4));
+    const number = await freshNumber("invoice", issueDate.slice(0, 4));
     // eslint-disable-next-line no-unused-vars
-    const { id, number: _n, createdAt, updatedAt, paidAt, ...rest } = q;
+    const { id, number: _n, createdAt, updatedAt, paidAt, shareToken, payments, amountPaid, remindersSent, respondedAt, responseNote, advancePercent, paymentTerms, ...rest } = q;
     await docRepo.update(q.id, { status: "accepted" });
     res.status(201).json(await docRepo.create({ ...rest, kind: "invoice", status: "draft", number, issueDate, dueDate: "" }));
   }));

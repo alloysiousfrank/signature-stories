@@ -67,8 +67,7 @@ function Editor({ initial, onBack, onSaved }) {
     const digits = (f.client.phone || "").replace(/\D/g, "");
     if (!digits) return "";
     const num = digits.length === 10 ? `91${digits}` : digits;
-    const text = `Hello ${f.client.name}, your ${f.kind} ${f.number || ""} for your ${f.eventType || "event"} is ready. Total: ${inr(t.total)}.` +
-      ` Advance on confirmation: ${inr(paymentSchedule(t.total, f.advancePercent)[0].amount)}. We have also emailed you the PDF. Thank you — Signature Stories`;
+    const text = `${waText(f, t, "We have also emailed you the PDF.")}`;
     return `https://wa.me/${num}?text=${encodeURIComponent(text)}`;
   };
   /* WhatsApp links cannot carry files, so on phones we open the share sheet with the PDF attached
@@ -83,8 +82,7 @@ function Editor({ initial, onBack, onSaved }) {
       if (saved.status === "draft") setF(await adminApi.setDocStatus(saved.id, "sent")); // the client link only opens sent documents
       const { link } = await adminApi.shareDoc(saved.id);
       const st = computeTotals(saved);
-      const text = `Hello ${saved.client.name}, your ${saved.kind} ${saved.number} for your ${saved.eventType || "event"} is ready. Total: ${inr(st.total)}.` +
-        ` Advance on confirmation: ${inr(paymentSchedule(st.total, saved.advancePercent)[0].amount)}. View online: ${link} Thank you — Signature Stories`;
+      const text = waText(saved, st, `View online: ${link}`);
       const digits = (saved.client.phone || "").replace(/\D/g, "");
       const chat = `https://wa.me/${digits ? (digits.length === 10 ? `91${digits}` : digits) : ""}?text=${encodeURIComponent(text)}`;
       setWa({ text, chat });
@@ -183,7 +181,7 @@ function Editor({ initial, onBack, onSaved }) {
           </dl>
         </div>
 
-        <h2>Payment plan</h2>
+        {!isInv && <><h2>Payment plan</h2>
         <div className="adm-grid3">
           <label className="adm-label">Advance on confirmation (%)<input type="number" min="0" max="100" value={f.advancePercent} onChange={set("advancePercent")} /></label>
           <label className="adm-label" style={{ gridColumn: "span 2" }}>Payment terms (shown on the PDF)
@@ -192,7 +190,7 @@ function Editor({ initial, onBack, onSaved }) {
         </div>
         <ul className="adm-agenda">
           {paymentSchedule(t.total, f.advancePercent).map((r) => <li key={r.label}><b>{r.label}</b> {inr(r.amount)}<small>{r.when}</small></li>)}
-        </ul>
+        </ul></>}
 
         {isInv && f.id && (
           <section className="adm-pay">
@@ -239,6 +237,16 @@ function Editor({ initial, onBack, onSaved }) {
       </div>
     </>
   );
+}
+
+/* Customer message. Quotations mention the advance; invoices state what is paid and what is left. */
+function waText(d, t, tail) {
+  const head = `Hello ${d.client.name}, your ${d.kind} ${d.number || ""} for your ${d.eventType || "event"} is ready. Total: ${inr(t.total)}.`;
+  const paid = Number(d.amountPaid) || 0;
+  const money = d.kind === "invoice"
+    ? (paid > 0 ? ` Received so far: ${inr(paid)}. Balance due: ${inr(Math.max(0, t.total - paid))}.` : "")
+    : ` Advance on confirmation: ${inr(paymentSchedule(t.total, d.advancePercent)[0].amount)}.`;
+  return `${head}${money} ${tail} Thank you — Signature Stories`;
 }
 
 export default function Documents({ kind, query }) {

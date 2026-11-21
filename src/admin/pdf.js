@@ -30,7 +30,8 @@ export async function buildPdf(doc) {
   const W = pdf.internal.pageSize.getWidth(), H = pdf.internal.pageSize.getHeight(), M = 16;
   const isInv = doc.kind === "invoice";
   const t = computeTotals(doc);
-  const received = isInv ? Math.min(t.total, Number(doc.amountPaid) || (doc.status === "paid" ? t.total : 0)) : 0;
+  const paidFromList = (doc.payments || []).reduce((a, p) => a + Number(p.amount || 0), 0);
+  const received = isInv ? Math.min(t.total, paidFromList || Number(doc.amountPaid) || (doc.status === "paid" ? t.total : 0)) : 0;
   const balance = Math.max(0, Math.round((t.total - received) * 100) / 100);
 
   // header band
@@ -99,26 +100,44 @@ export async function buildPdf(doc) {
     pdf.setTextColor(47, 107, 63); pdf.setFont("Cinzel", "normal"); pdf.setFontSize(18); pdf.text("PAID", M, y + 8);
   }
 
-  if (received > 0) {
+  let ny = y + 20;
+  if (isInv) {
+    // Payment history: every part-payment received, then the balance still due.
+    const history = (doc.payments || []).length ? doc.payments
+      : doc.status === "paid" ? [{ date: String(doc.paidAt || doc.issueDate || "").slice(0, 10), amount: t.total, method: "", note: "" }] : [];
+    if (history.length) {
+      if (ny > H - 95) { pdf.addPage(); ny = 20; }
+      pdf.setFont("Cinzel", "normal"); pdf.setFontSize(8.5); pdf.setTextColor(...GOLD_DARK); pdf.text("PAYMENT HISTORY", M, ny);
+      autoTable(pdf, {
+        startY: ny + 3,
+        head: [["Date", "Method", "Note", "Amount"]],
+        body: history.map((h) => [day(h.date), h.method || "—", h.note || "", money(h.amount)]),
+        theme: "grid", margin: { left: M, right: M },
+        styles: { font: "Cormorant", fontStyle: "normal", fontSize: 11, textColor: INK, lineColor: [225, 217, 190], lineWidth: 0.2, cellPadding: 2.6 },
+        headStyles: { font: "Cinzel", fontStyle: "normal", fontSize: 8.5, fillColor: GOLD_DARK, textColor: [255, 253, 247] },
+        alternateRowStyles: { fillColor: [251, 248, 238] },
+        columnStyles: { 0: { cellWidth: 34 }, 1: { cellWidth: 34 }, 3: { cellWidth: 40, halign: "right" } },
+      });
+      ny = pdf.lastAutoTable.finalY + 5;
+      pdf.setFont("Cormorant", "normal"); pdf.setFontSize(11.5); pdf.setTextColor(...INK);
+      pdf.text("Total received", W - M - 78, ny); pdf.text(money(received), W - M - 4, ny, { align: "right" });
+      pdf.setFont("Cormorant", "bold"); pdf.setFontSize(13);
+      pdf.text("Balance due", W - M - 78, ny + 7); pdf.text(money(balance), W - M - 4, ny + 7, { align: "right" });
+      ny += 16;
+    }
+  } else {
+    if (ny > H - 70) { pdf.addPage(); ny = 20; }
+    pdf.setFont("Cinzel", "normal"); pdf.setFontSize(8.5); pdf.setTextColor(...GOLD_DARK); pdf.text("PAYMENT PLAN", M, ny);
     pdf.setFont("Cormorant", "normal"); pdf.setFontSize(11.5); pdf.setTextColor(...INK);
-    pdf.text("Received", W - M - 78, y + 17); pdf.text(`- ${money(received)}`, W - M - 4, y + 17, { align: "right" });
-    pdf.setFont("Cormorant", "bold"); pdf.text("Balance due", W - M - 78, y + 23); pdf.text(money(balance), W - M - 4, y + 23, { align: "right" });
-    y += 12;
+    let py = ny + 6;
+    for (const r of paymentSchedule(t.total, doc.advancePercent)) {
+      pdf.text(`${r.label}  ·  ${r.when}`, M, py);
+      pdf.setFont("Cormorant", "bold"); pdf.text(money(r.amount), W - M, py, { align: "right" }); pdf.setFont("Cormorant", "normal");
+      py += 6;
+    }
+    if (doc.paymentTerms) { pdf.setFont("Cormorant", "italic"); pdf.text(pdf.splitTextToSize(doc.paymentTerms, W - 2 * M), M, py); py += 6; pdf.setFont("Cormorant", "normal"); }
+    ny = py + 4;
   }
-
-  // payment schedule
-  let ny = y + 22;
-  if (ny > H - 70) { pdf.addPage(); ny = 20; }
-  pdf.setFont("Cinzel", "normal"); pdf.setFontSize(8.5); pdf.setTextColor(...GOLD_DARK); pdf.text("PAYMENT PLAN", M, ny);
-  pdf.setFont("Cormorant", "normal"); pdf.setFontSize(11.5); pdf.setTextColor(...INK);
-  let py = ny + 6;
-  for (const r of paymentSchedule(t.total, doc.advancePercent)) {
-    pdf.text(`${r.label}  ·  ${r.when}`, M, py);
-    pdf.setFont("Cormorant", "bold"); pdf.text(money(r.amount), W - M, py, { align: "right" }); pdf.setFont("Cormorant", "normal");
-    py += 6;
-  }
-  if (doc.paymentTerms) { pdf.setFont("Cormorant", "italic"); pdf.text(pdf.splitTextToSize(doc.paymentTerms, W - 2 * M), M, py); py += 6; pdf.setFont("Cormorant", "normal"); }
-  ny = py + 4;
 
   // payment QR (invoices) + notes
   if (isInv && balance > 0 && doc.status !== "cancelled" && BUSINESS.upiId) {

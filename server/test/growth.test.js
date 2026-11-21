@@ -90,3 +90,25 @@ test("event end date is saved and shown on the client page", async () => {
   const { token } = (await request(app).post(`/api/admin/documents/${d.id}/share`).set(H(t))).body;
   assert.equal((await request(app).get(`/api/public/doc/${token}`)).body.eventEndDate, "2026-12-12");
 });
+
+test("invoice numbering can be reset, never duplicates, and payments show on the client page", async () => {
+  const { app } = makeApp(); const t = await login(app);
+  const y = new Date().toISOString().slice(0, 4);
+  const a = (await request(app).post("/api/admin/documents").set(H(t)).send(doc({ issueDate: `${y}-01-05` }))).body;
+  const b = (await request(app).post("/api/admin/documents").set(H(t)).send(doc({ issueDate: `${y}-01-06` }))).body;
+  assert.ok(a.number.endsWith("0001") && b.number.endsWith("0002"));
+  let r = await request(app).put("/api/admin/numbering").set(H(t)).send({ kind: "invoice", next: 1 });
+  assert.equal(r.status, 409); // 0001 is still in use
+  await request(app).delete(`/api/admin/documents/${a.id}`).set(H(t));
+  r = await request(app).put("/api/admin/numbering").set(H(t)).send({ kind: "invoice", next: 1 });
+  assert.equal(r.status, 200);
+  const c = (await request(app).post("/api/admin/documents").set(H(t)).send(doc({ issueDate: `${y}-01-07` }))).body;
+  assert.ok(c.number.endsWith("0001"));
+  const d = (await request(app).post("/api/admin/documents").set(H(t)).send(doc({ issueDate: `${y}-01-08` }))).body;
+  assert.ok(d.number.endsWith("0003")); // 0002 exists, so it is skipped
+  assert.equal((await request(app).put("/api/admin/numbering").set(H(t)).send({ kind: "invoice", next: 0 })).status, 400);
+  await request(app).post(`/api/admin/documents/${c.id}/payments`).set(H(t)).send({ amount: 250, date: "2026-11-05", method: "UPI" });
+  const { token } = (await request(app).post(`/api/admin/documents/${c.id}/share`).set(H(t))).body;
+  const v = (await request(app).get(`/api/public/doc/${token}`)).body;
+  assert.equal(v.payments.length, 1); assert.equal(v.balance, 750);
+});

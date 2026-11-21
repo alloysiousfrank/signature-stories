@@ -53,10 +53,19 @@ export function ClientView({ token }) {
               {doc.discount > 0 && <><dt>Discount</dt><dd>- {inr(doc.discount)}</dd></>}
               {doc.gstPercent > 0 && <><dt>GST ({doc.gstPercent}%)</dt><dd>{inr(doc.tax)}</dd></>}
               <dt className="g">Total</dt><dd className="g">{inr(doc.total)}</dd>
-              {!isQuote && doc.amountPaid > 0 && <><dt>Received</dt><dd>- {inr(doc.amountPaid)}</dd><dt className="g">Balance due</dt><dd className="g">{inr(doc.balance)}</dd></>}
-            </dl>
+              </dl>
+            {!isQuote && (doc.payments || []).length > 0 && (
+              <>
+                <h2 className="cv-sub">Payment history</h2>
+                <table className="cv-table">
+                  <thead><tr><th>Date</th><th>Method</th><th>Amount</th></tr></thead>
+                  <tbody>{doc.payments.map((p, i) => <tr key={i}><td>{day(p.date)}</td><td>{p.method || "—"}</td><td>{inr(p.amount)}</td></tr>)}</tbody>
+                </table>
+                <dl className="cv-totals"><dt>Total received</dt><dd>{inr(doc.amountPaid)}</dd><dt className="g">Balance due</dt><dd className="g">{inr(doc.balance)}</dd></dl>
+              </>
+            )}
             {isQuote && doc.advancePercent > 0 && <p className="cv-muted">Advance on confirmation: {doc.advancePercent}% ({inr(Math.round(doc.total * doc.advancePercent) / 100)}). {doc.paymentTerms}</p>}
-            {!isQuote && doc.dueDate && doc.balance > 0 && <p className="cv-muted">Due by {day(doc.dueDate)}. {doc.paymentTerms}</p>}
+            {!isQuote && doc.dueDate && doc.balance > 0 && <p className="cv-muted">Due by {day(doc.dueDate)}.</p>}
             {!isQuote && doc.status === "paid" && <p className="cv-ok">Paid in full. Thank you!</p>}
             {doc.notes && <p className="cv-notes">{doc.notes}</p>}
 

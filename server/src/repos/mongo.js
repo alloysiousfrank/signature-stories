@@ -96,6 +96,9 @@ export const mongoDocRepo = {
     const c = await Counter.findOneAndUpdate({ _id: `${kind}-${year}` }, { $inc: { n: 1 } }, { upsert: true, new: true });
     return `SS-${kind === "invoice" ? "INV" : "QUO"}-${year}-${String(c.n).padStart(4, "0")}`;
   },
+  async counter(kind, year) { return (await Counter.findById(`${kind}-${year}`).lean())?.n || 0; },
+  async setCounter(kind, year, n) { await Counter.findOneAndUpdate({ _id: `${kind}-${year}` }, { $set: { n } }, { upsert: true }); },
+  async numberExists(number) { return !!(await Document.exists({ number })); },
   async create(data) { return json(await Document.create(data)); },
   async list({ kind, status, q } = {}, { page = 1, limit = 20 } = {}) {
     const f = {};

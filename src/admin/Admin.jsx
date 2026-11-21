@@ -272,8 +272,38 @@ function Settings() {
         {msg.text && <p className={msg.ok ? "adm-ok" : "adm-err"} role="status">{msg.text}</p>}
         <button className="adm-btn">Update password</button>
       </form>
+      <NumberingSettings />
       <NotifySettings />
     </>
+  );
+}
+
+function NumberingSettings() {
+  const [info, setInfo] = useState(null);
+  const [kind, setKind] = useState("invoice");
+  const [next, setNext] = useState("1");
+  const [note, setNote] = useState({ ok: true, text: "" });
+  const load = () => adminApi.getNumbering().then(setInfo).catch(() => {});
+  useEffect(() => { load(); }, []);
+  const save = async (e) => {
+    e.preventDefault(); setNote({ ok: true, text: "" });
+    try {
+      const r = await adminApi.setNumbering(kind, Number(next));
+      setNote({ ok: true, text: `Done. The next ${kind} will be ${r.next}.` }); load();
+    } catch (x) { setNote({ ok: false, text: x.message }); }
+  };
+  const label = (k) => (info ? `${info[k].last ? `last used: ${String(info[k].last).padStart(4, "0")}` : "none yet this year"}` : "…");
+  return (
+    <form className="adm-card adm-form" onSubmit={save}>
+      <h2>Invoice and quotation numbers</h2>
+      <p className="adm-muted">Numbers look like SS-INV-{info?.year || "2026"}-0001 and restart every year. Invoices: {label("invoice")}. Quotations: {label("quotation")}. To start again from 1, delete the old test documents first, then set the next number to 1.</p>
+      <div className="adm-grid3">
+        <select value={kind} onChange={(e) => setKind(e.target.value)}><option value="invoice">Invoices</option><option value="quotation">Quotations</option></select>
+        <label className="adm-label">Next number<input type="number" min="1" step="1" required value={next} onChange={(e) => setNext(e.target.value)} /></label>
+        <button className="adm-btn">Set next number</button>
+      </div>
+      {note.text && <p className={note.ok ? "adm-ok" : "adm-err"} role="status">{note.text}</p>}
+    </form>
   );
 }
 

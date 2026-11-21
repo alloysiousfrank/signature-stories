@@ -44,6 +44,9 @@ export function fakeRepos() {
   };
   const docs = []; const counters = {};
   const docRepo = {
+    async counter(kind, year) { return counters[`${kind}-${year}`] || 0; },
+    async setCounter(kind, year, n) { counters[`${kind}-${year}`] = n; },
+    async numberExists(number) { return docs.some((d) => d.number === number); },
     async nextNumber(kind, year) { const k = `${kind}-${year}`; counters[k] = (counters[k] || 0) + 1; return `SS-${kind === "invoice" ? "INV" : "QUO"}-${year}-${String(counters[k]).padStart(4, "0")}`; },
     async create(d) { const r = { id: `d${docs.length + 1}`, createdAt: new Date(), ...d }; docs.push(r); return r; },
     async list({ kind, status }, { page, limit }) { const m = docs.filter((d) => (!kind || d.kind === kind) && (!status || d.status === status)); return { items: m.slice((page - 1) * limit, page * limit), total: m.length }; },
