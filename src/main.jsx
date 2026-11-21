@@ -13,6 +13,15 @@ document.addEventListener('error', (e) => {
   }
 }, true)
 
+// The site uses #/ page addresses. Plain addresses such as /admin or /quote are sent to their #/ form,
+// so a typed or shared link like signaturestories.in/admin opens the right page.
+{
+  const { pathname, search, hash } = window.location
+  if (pathname !== '/' && !hash) {
+    window.location.replace(`/#${pathname.replace(/\/+$/, '')}${search}`)
+  }
+}
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <App />
