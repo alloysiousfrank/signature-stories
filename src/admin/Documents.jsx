@@ -249,7 +249,7 @@ function waText(d, t, tail) {
   const head = `Hello ${d.client.name}, your ${d.kind} ${d.number || ""} for your ${d.eventType || "event"} is ready. Total: ${inr(t.total)}.`;
   const paid = Number(d.amountPaid) || 0;
   const money = d.kind === "invoice"
-    ? (paid > 0 ? ` Received so far: ${inr(paid)}. Balance due: ${inr(Math.max(0, t.total - paid))}.` : "")
+    ? (paid > 0 ? ` Received so far: ${inr(paid)}.${t.total - paid > 0.005 ? ` Balance due: ${inr(t.total - paid)}.` : ""}` : "")
     : ` Advance on confirmation: ${inr(paymentSchedule(t.total, d.advancePercent)[0].amount)}.`;
   return `${head}${money} ${tail} Thank you — Signature Stories`;
 }

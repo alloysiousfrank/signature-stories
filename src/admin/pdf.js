@@ -121,9 +121,11 @@ export async function buildPdf(doc) {
       ny = pdf.lastAutoTable.finalY + 5;
       pdf.setFont("Cormorant", "normal"); pdf.setFontSize(11.5); pdf.setTextColor(...INK);
       pdf.text("Total received", W - M - 78, ny); pdf.text(money(received), W - M - 4, ny, { align: "right" });
-      pdf.setFont("Cormorant", "bold"); pdf.setFontSize(13);
-      pdf.text("Balance due", W - M - 78, ny + 7); pdf.text(money(balance), W - M - 4, ny + 7, { align: "right" });
-      ny += 16;
+      if (balance > 0) {
+        pdf.setFont("Cormorant", "bold"); pdf.setFontSize(13);
+        pdf.text("Balance due", W - M - 78, ny + 7); pdf.text(money(balance), W - M - 4, ny + 7, { align: "right" });
+        ny += 16;
+      } else ny += 9;
     }
   } else {
     if (ny > H - 70) { pdf.addPage(); ny = 20; }
