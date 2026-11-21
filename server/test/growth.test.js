@@ -110,5 +110,7 @@ test("invoice numbering can be reset, never duplicates, and payments show on the
   await request(app).post(`/api/admin/documents/${c.id}/payments`).set(H(t)).send({ amount: 250, date: "2026-11-05", method: "UPI" });
   const { token } = (await request(app).post(`/api/admin/documents/${c.id}/share`).set(H(t))).body;
   const v = (await request(app).get(`/api/public/doc/${token}`)).body;
-  assert.equal(v.payments.length, 1); assert.equal(v.balance, 750);
+  assert.equal(v.payments.length, 0); assert.equal(v.balance, 750); // history hidden unless the admin ticks "show payment history"
+  await request(app).put(`/api/admin/documents/${c.id}`).set(H(t)).send({ ...doc({ issueDate: `${y}-01-07` }), showPaymentHistory: true });
+  assert.equal((await request(app).get(`/api/public/doc/${token}`)).body.payments.length, 1);
 });

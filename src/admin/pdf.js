@@ -106,6 +106,7 @@ export async function buildPdf(doc) {
     const history = (doc.payments || []).length ? doc.payments
       : doc.status === "paid" ? [{ date: String(doc.paidAt || doc.issueDate || "").slice(0, 10), amount: t.total, method: "", note: "" }] : [];
     if (history.length) {
+      if (doc.showPaymentHistory) {
       if (ny > H - 95) { pdf.addPage(); ny = 20; }
       pdf.setFont("Cinzel", "normal"); pdf.setFontSize(8.5); pdf.setTextColor(...GOLD_DARK); pdf.text("PAYMENT HISTORY", M, ny);
       autoTable(pdf, {
@@ -119,6 +120,7 @@ export async function buildPdf(doc) {
         columnStyles: { 0: { cellWidth: 34 }, 1: { cellWidth: 34 }, 3: { cellWidth: 40, halign: "right" } },
       });
       ny = pdf.lastAutoTable.finalY + 5;
+      } else ny += 2;
       pdf.setFont("Cormorant", "normal"); pdf.setFontSize(11.5); pdf.setTextColor(...INK);
       pdf.text("Total received", W - M - 78, ny); pdf.text(money(received), W - M - 4, ny, { align: "right" });
       if (balance > 0) {

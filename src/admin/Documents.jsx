@@ -15,7 +15,7 @@ const LABEL = { invoice: "Invoice", quotation: "Quotation" };
 const blank = (kind) => {
   const issueDate = isoToday();
   return {
-    kind, status: "draft", client: { name: "", email: "", phone: "", address: "" }, eventType: "", eventDate: "", eventEndDate: "", venue: "",
+    kind, status: "draft", client: { name: "", email: "", phone: "", address: "" }, eventType: "", eventDate: "", eventEndDate: "", showPaymentHistory: false, venue: "",
     items: [{ description: "", qty: 1, rate: 0 }], gstPercent: 0, discount: 0, advancePercent: 50, paymentTerms: "", issueDate,
     dueDate: addDays(issueDate, kind === "invoice" ? 7 : 15), notes: "", inquiryId: "",
   };
@@ -196,6 +196,9 @@ function Editor({ initial, onBack, onSaved }) {
           {paymentSchedule(t.total, f.advancePercent).map((r) => <li key={r.label}><b>{r.label}</b> {inr(r.amount)}<small>{r.when}</small></li>)}
         </ul></>}
 
+        {isInv && (
+          <label className="adm-check"><input type="checkbox" checked={!!f.showPaymentHistory} onChange={(e) => setF({ ...f, showPaymentHistory: e.target.checked })} /> Show payment history on the invoice PDF (date, method and amount of each payment)</label>
+        )}
         {isInv && f.id && (
           <section className="adm-pay">
             <h2>Payments received</h2>

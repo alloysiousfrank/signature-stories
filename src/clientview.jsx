@@ -54,13 +54,13 @@ export function ClientView({ token }) {
               {doc.gstPercent > 0 && <><dt>GST ({doc.gstPercent}%)</dt><dd>{inr(doc.tax)}</dd></>}
               <dt className="g">Total</dt><dd className="g">{inr(doc.total)}</dd>
               </dl>
-            {!isQuote && (doc.payments || []).length > 0 && (
+            {!isQuote && doc.amountPaid > 0 && (
               <>
-                <h2 className="cv-sub">Payment history</h2>
+                {(doc.payments || []).length > 0 && <><h2 className="cv-sub">Payment history</h2>
                 <table className="cv-table">
                   <thead><tr><th>Date</th><th>Method</th><th>Amount</th></tr></thead>
                   <tbody>{doc.payments.map((p, i) => <tr key={i}><td>{day(p.date)}</td><td>{p.method || "—"}</td><td>{inr(p.amount)}</td></tr>)}</tbody>
-                </table>
+                </table></>}
                 <dl className="cv-totals"><dt>Total received</dt><dd>{inr(doc.amountPaid)}</dd>{doc.balance > 0 && <><dt className="g">Balance due</dt><dd className="g">{inr(doc.balance)}</dd></>}</dl>
               </>
             )}

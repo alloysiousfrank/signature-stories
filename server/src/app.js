@@ -59,6 +59,7 @@ const docSchema = z.object({
   eventType: z.string().trim().max(60).optional().default(""),
   eventDate: isoOrEmpty.optional().default(""),
   eventEndDate: isoOrEmpty.optional().default(""),
+  showPaymentHistory: z.boolean().optional().default(false),
   venue: z.string().trim().max(200).optional().default(""),
   items: z.array(z.object({
     description: z.string().trim().min(1).max(300),
@@ -333,9 +334,9 @@ export function createApp({ env, inquiryRepo, adminRepo, consultRepo, docRepo, p
   }));
 
   const publicDoc = (d) => ({
-    kind: d.kind, number: d.number, status: d.status, issueDate: d.issueDate, dueDate: d.dueDate, eventType: d.eventType, eventDate: d.eventDate, eventEndDate: d.eventEndDate, venue: d.venue,
+    kind: d.kind, number: d.number, status: d.status, issueDate: d.issueDate, dueDate: d.dueDate, eventType: d.eventType, eventDate: d.eventDate, eventEndDate: d.eventEndDate, showPaymentHistory: !!d.showPaymentHistory, venue: d.venue,
     client: { name: d.client?.name || "" }, items: d.items, subtotal: d.subtotal, discount: d.discount, taxable: d.taxable, gstPercent: d.gstPercent, tax: d.tax, total: d.total,
-    advancePercent: d.advancePercent, paymentTerms: d.paymentTerms, notes: d.notes, amountPaid: paidSum(d), balance: balanceOf(d), payments: d.kind === "invoice" ? paymentsOf(d).map((p) => ({ date: p.date, amount: p.amount, method: p.method })) : [], respondedAt: d.respondedAt || null,
+    advancePercent: d.advancePercent, paymentTerms: d.paymentTerms, notes: d.notes, amountPaid: paidSum(d), balance: balanceOf(d), payments: d.kind === "invoice" && d.showPaymentHistory ? paymentsOf(d).map((p) => ({ date: p.date, amount: p.amount, method: p.method })) : [], respondedAt: d.respondedAt || null,
   });
   const viewLimit = rateLimits ? limiter(15 * 60e3, 120, "Too many requests.") : noop;
   app.get("/api/public/doc/:token", viewLimit, wrap(async (req, res) => {
@@ -422,7 +423,7 @@ export function createApp({ env, inquiryRepo, adminRepo, consultRepo, docRepo, p
     const issueDate = today();
     const number = await freshNumber("invoice", issueDate.slice(0, 4));
     // eslint-disable-next-line no-unused-vars
-    const { id, number: _n, createdAt, updatedAt, paidAt, shareToken, payments, amountPaid, remindersSent, respondedAt, responseNote, advancePercent, paymentTerms, ...rest } = q;
+    const { id, number: _n, createdAt, updatedAt, paidAt, shareToken, payments, amountPaid, remindersSent, respondedAt, responseNote, advancePercent, paymentTerms, showPaymentHistory, ...rest } = q;
     await docRepo.update(q.id, { status: "accepted" });
     res.status(201).json(await docRepo.create({ ...rest, kind: "invoice", status: "draft", number, issueDate, dueDate: "" }));
   }));
