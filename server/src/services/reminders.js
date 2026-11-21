@@ -22,7 +22,7 @@ function pickStage(diff, stages, sent) {
 const INVOICE_STAGES = [{ key: "inv-3", at: 3 }, { key: "inv0", at: 0 }, { key: "inv+3", at: -3 }, { key: "inv+10", at: -10 }];
 const EVENT_STAGES = [{ key: "ev-7", at: 7 }, { key: "ev-1", at: 1 }];
 
-const wrapBody = (body, site) => `<div style="font-family:Georgia,serif;color:#242019;max-width:560px"><h2 style="color:#8b6f33;margin:0 0 8px">Signature Stories</h2>${body}<p>Warm regards,<br>Team Signature Stories<br><a href="${site}" style="color:#8b6f33">${site.replace(/^https?:\/\//, "")}</a></p></div>`;
+const wrapBody = (body, site) => `<div style="font-family:Georgia,serif;color:#242019;max-width:560px"><h2 style="color:#8b6f33;margin:0 0 2px"><a href="${site}" style="color:#8b6f33;text-decoration:none">Signature Stories</a></h2><p style="margin:0 0 14px;font-size:13px"><a href="${site}" style="color:#8b6f33">${site.replace(/^https?:\/\//, "")}</a></p>${body}<p>Warm regards,<br>Team Signature Stories<br><a href="${site}" style="color:#8b6f33">${site.replace(/^https?:\/\//, "")}</a></p></div>`;
 
 /* Sends due payment and upcoming-event reminders. Safe to call as often as you like. */
 export async function runReminders({ env, docRepo, inquiryRepo, consultRepo, fetchImpl, now = new Date(), force = false }) {

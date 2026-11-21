@@ -34,7 +34,7 @@ export function ClientView({ token }) {
   return (
     <main className="cv-page">
       <div className="cv-card">
-        <img className="cv-logo" src="/assests/logo.png" alt={BUSINESS.name} />
+        <a href={BUSINESS.websiteUrl} target="_blank" rel="noreferrer" className="cv-top"><img className="cv-logo" src="/assests/logo.png" alt={BUSINESS.name} /><span>{BUSINESS.website}</span></a>
         {!doc && !err && <p className="cv-muted">Opening your document… this can take a few seconds.</p>}
         {err && <p className="cv-err" role="alert">{err}</p>}
         {doc && (

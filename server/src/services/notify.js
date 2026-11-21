@@ -47,7 +47,8 @@ export async function sendDocumentEmail(env, doc, pdfBase64, fetchImpl = fetch, 
   const label = isInv ? "Invoice" : "Quotation";
   const total = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(doc.total || 0);
   const html = `<div style="font-family:Georgia,serif;color:#242019;max-width:560px">
-<h2 style="color:#8b6f33;margin:0 0 8px">Signature Stories</h2>
+<h2 style="color:#8b6f33;margin:0 0 2px"><a href="${site}" style="color:#8b6f33;text-decoration:none">Signature Stories</a></h2>
+<p style="margin:0 0 14px;font-size:13px"><a href="${site}" style="color:#8b6f33">${site.replace(/^https?:\/\//, "")}</a></p>
 <p>Dear ${esc(doc.client?.name)},</p>
 <p>Please find attached your ${label.toLowerCase()} <b>${esc(doc.number)}</b>${doc.eventType ? ` for your ${esc(doc.eventType.toLowerCase())}` : ""}.</p>
 <p style="font-size:18px"><b>Total: ${esc(total)}</b>${doc.dueDate ? `<br><span style="font-size:14px">${isInv ? "Due" : "Valid until"}: ${esc(doc.dueDate)}</span>` : ""}</p>

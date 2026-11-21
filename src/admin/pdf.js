@@ -39,6 +39,8 @@ export async function buildPdf(doc) {
   pdf.setFillColor(...GOLD); pdf.rect(0, 42, W, 1.2, "F");
   const logo = await logoData();
   if (logo) { const h = 22; pdf.addImage(logo.url, "PNG", M, 10, h * logo.ratio, h); }
+  pdf.setFont("Cormorant", "bold"); pdf.setFontSize(10.5); pdf.setTextColor(...GOLD_DARK);
+  pdf.textWithLink(BUSINESS.website, M, 38, { url: BUSINESS.websiteUrl });
   pdf.setTextColor(...INK); pdf.setFont("Cinzel", "normal"); pdf.setFontSize(23);
   pdf.text(isInv ? "INVOICE" : "QUOTATION", W - M, 20, { align: "right" });
   pdf.setFont("Cormorant", "bold"); pdf.setFontSize(11); pdf.setTextColor(...GOLD_DARK);
