@@ -47,6 +47,7 @@ export async function sendDocumentEmail(env, doc, pdfBase64, fetchImpl = fetch, 
   const label = isInv ? "Invoice" : "Quotation";
   const total = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(doc.total || 0);
   const html = `<div style="font-family:Georgia,serif;color:#242019;max-width:560px">
+<a href="${site}"><img src="${site}/assests/logo.png" alt="Signature Stories" height="72" style="display:block;height:72px;width:auto;border:0;margin:0 0 10px"></a>
 <h2 style="color:#8b6f33;margin:0 0 2px"><a href="${site}" style="color:#8b6f33;text-decoration:none">Signature Stories</a></h2>
 <p style="margin:0 0 14px;font-size:13px"><a href="${site}" style="color:#8b6f33">${site.replace(/^https?:\/\//, "")}</a></p>
 <p>Dear ${esc(doc.client?.name)},</p>
