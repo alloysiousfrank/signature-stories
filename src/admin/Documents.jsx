@@ -73,33 +73,37 @@ function Editor({ initial, onBack, onSaved }) {
   /* WhatsApp links cannot carry files, so on phones we open the share sheet with the PDF attached
      (pick WhatsApp and the customer). On a computer the PDF is downloaded and WhatsApp opens with the text. */
   const [wa, setWa] = useState(null); // { text, url } of the last WhatsApp send, so the message can be sent on its own
-  const sendWhatsApp = async () => {
+  /* mode "chat": opens the customer's own chat with the message (the PDF link is inside) and downloads the PDF
+     so it can be attached with the paperclip. mode "file": phone share sheet with the PDF attached (you pick the chat). */
+  const sendWhatsApp = async (mode = "chat") => {
     setErr(""); setMsg("");
+    // Open the tab now, inside the tap, so the browser does not block it after the PDF is prepared.
+    const tab = mode === "chat" ? window.open("", "_blank") : null;
     const saved = await save();
-    if (!saved) return;
+    if (!saved) { tab?.close(); return; }
     setBusy(true);
     try {
       if (saved.status === "draft") setF(await adminApi.setDocStatus(saved.id, "sent")); // the client link only opens sent documents
       const { link } = await adminApi.shareDoc(saved.id);
       const st = computeTotals(saved);
-      const text = waText(saved, st, `View online: ${link}`);
+      const text = waText(saved, st, `View and download the PDF here: ${link}`);
       const digits = (saved.client.phone || "").replace(/\D/g, "");
       const chat = `https://wa.me/${digits ? (digits.length === 10 ? `91${digits}` : digits) : ""}?text=${encodeURIComponent(text)}`;
       setWa({ text, chat });
       try { await navigator.clipboard.writeText(text); } catch { /* clipboard may be unavailable */ }
       const { pdfBlob } = await import("./pdf.js");
       const file = new File([await pdfBlob(saved)], `${saved.number}.pdf`, { type: "application/pdf" });
-      if (navigator.canShare?.({ files: [file] })) {
-        try { await navigator.share({ files: [file], text }); setMsg("Shared. WhatsApp sometimes drops the text when a PDF is attached — the message is copied, so paste it, or use \"Send the message\" below."); }
+      if (mode === "file" && navigator.canShare?.({ files: [file] })) {
+        try { await navigator.share({ files: [file], text }); setMsg("Shared. If the message is missing, paste it (it is copied) or use \"Send the message\" below."); }
         catch (e) { if (e?.name !== "AbortError") throw e; }
-      } else {
-        const url = URL.createObjectURL(file);
-        const a = Object.assign(document.createElement("a"), { href: url, download: file.name });
-        document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 5000);
-        window.open(chat, "_blank", "noopener");
-        setMsg("PDF downloaded. In WhatsApp, press the attach (paperclip) button and pick the PDF.");
+        return;
       }
-    } catch (e) { setErr(explainError(e, "Could not prepare the PDF.")); } finally { setBusy(false); }
+      const url = URL.createObjectURL(file);
+      const a = Object.assign(document.createElement("a"), { href: url, download: file.name });
+      document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 5000);
+      if (tab) tab.location.href = chat; else window.open(chat, "_blank");
+      setMsg("WhatsApp opened with the customer's chat and the message (it contains the PDF link). To attach the PDF itself too, press the paperclip, choose Document and pick the PDF just downloaded.");
+    } catch (e) { tab?.close(); setErr(explainError(e, "Could not prepare the PDF.")); } finally { setBusy(false); }
   };
   const copyLink = async () => {
     setErr(""); setMsg("");
@@ -229,7 +233,8 @@ function Editor({ initial, onBack, onSaved }) {
           <button className="adm-btn" onClick={pdf} disabled={busy || !f.client.name.trim()}>Save & download PDF</button>
           <button className="adm-btn" title="Saves and emails the PDF to the client" onClick={email} disabled={busy || !f.client.name.trim() || !f.client.email.trim()}>Email to client</button>
           {f.id && f.status !== "draft" && <button className="adm-btn adm-ghost dark" onClick={copyLink}>Copy client link</button>}
-          <button className="adm-btn" onClick={sendWhatsApp} disabled={busy || !f.client.name.trim()}>Send on WhatsApp with PDF</button>
+          <button className="adm-btn" onClick={() => sendWhatsApp("chat")} disabled={busy || !f.client.name.trim()}>Send on WhatsApp</button>
+          <button className="adm-btn adm-ghost dark" onClick={() => sendWhatsApp("file")} disabled={busy || !f.client.name.trim()}>Share PDF file (choose chat)</button>
           {f.id && waLink() && <a className="adm-btn adm-ghost dark" href={waLink()} target="_blank" rel="noreferrer">WhatsApp text only</a>}
           {f.id && f.kind === "quotation" && <button className="adm-btn" onClick={convert}>Convert to invoice</button>}
           {f.id && <DeleteButton what={f.number} onConfirm={async () => { try { await adminApi.removeDoc(f.id); onSaved(); onBack(); } catch (e) { setErr(e.message); } }} />}
