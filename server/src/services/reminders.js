@@ -22,7 +22,7 @@ function pickStage(diff, stages, sent) {
 const INVOICE_STAGES = [{ key: "inv-3", at: 3 }, { key: "inv0", at: 0 }, { key: "inv+3", at: -3 }, { key: "inv+10", at: -10 }];
 const EVENT_STAGES = [{ key: "ev-7", at: 7 }, { key: "ev-1", at: 1 }];
 
-const wrap = (body) => `<div style="font-family:Georgia,serif;color:#242019;max-width:560px"><h2 style="color:#8b6f33;margin:0 0 8px">Signature Stories</h2>${body}<p>Warm regards,<br>Team Signature Stories</p></div>`;
+const wrapBody = (body, site) => `<div style="font-family:Georgia,serif;color:#242019;max-width:560px"><h2 style="color:#8b6f33;margin:0 0 8px">Signature Stories</h2>${body}<p>Warm regards,<br>Team Signature Stories<br><a href="${site}" style="color:#8b6f33">${site.replace(/^https?:\/\//, "")}</a></p></div>`;
 
 /* Sends due payment and upcoming-event reminders. Safe to call as often as you like. */
 export async function runReminders({ env, docRepo, inquiryRepo, consultRepo, fetchImpl, now = new Date(), force = false }) {
@@ -30,6 +30,8 @@ export async function runReminders({ env, docRepo, inquiryRepo, consultRepo, fet
   if (!env.resendKey) return { ...result, disabled: "E-mail is not configured (RESEND_API_KEY)." };
   if (!force && istHour(now) < 8) return { ...result, disabled: "Waiting for 8 AM IST." };
   const today = istDate(now);
+  const site = env.siteUrl || "https://www.signaturestories.in";
+  const wrap = (body) => wrapBody(body, site);
   const mail = (to, subject, html) => sendMail(env, { to, subject, html, replyTo: env.notifyEmail }, fetchImpl);
 
   for (const d of await docRepo.sentInvoices()) {

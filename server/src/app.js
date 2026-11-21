@@ -359,7 +359,7 @@ export function createApp({ env, inquiryRepo, adminRepo, consultRepo, docRepo, p
   }));
   function notifyAdminMail(subject, note) {
     if (!env.resendKey) return;
-    sendMail(env, { to: env.notifyEmail, subject, html: `<p>${subject}.</p>${note ? `<p>Their note: ${String(note).replace(/[<>&]/g, "")}</p>` : ""}` }, fetchImpl);
+    sendMail(env, { to: env.notifyEmails || [env.notifyEmail], subject, html: `<p>${subject}.</p>${note ? `<p>Their note: ${String(note).replace(/[<>&]/g, "")}</p>` : ""}` }, fetchImpl);
   }
 
   // ---- part-payments on invoices ----

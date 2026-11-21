@@ -11,6 +11,8 @@ export const BUSINESS = {
   ownerRole: "Founder & Lead Planner",
   phone: "+91 88701 84906",
   address: "Tiruppur",
+  website: "www.signaturestories.in",
+  websiteUrl: "https://www.signaturestories.in",
   hours: "Mon – Sat · 10:00 AM – 7:00 PM",
   upiId: "anburaja.arul-1@okaxis", // each invoice PDF gets a QR for this ID with that invoice's balance filled in
   upiName: "Anburaja Arul",

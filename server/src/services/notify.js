@@ -12,7 +12,7 @@ ${(inq.services || []).length ? `<p>Services: ${esc(inq.services.join(", "))}</p
       method: "POST",
       headers: { Authorization: `Bearer ${env.resendKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        from: env.mailFrom, to: [env.notifyEmail], ...(inq.email ? { reply_to: inq.email } : {}),
+        from: env.mailFrom, to: env.notifyEmails || [env.notifyEmail], ...(inq.email ? { reply_to: inq.email } : {}),
         subject: `${inq.kind === "quote" ? "Quotation request" : "New enquiry"}: ${inq.name} (${inq.eventType})`, html,
       }),
     });
@@ -28,7 +28,7 @@ export async function notifyConsultation(env, c, fetchImpl = fetch) {
       method: "POST",
       headers: { Authorization: `Bearer ${env.resendKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        from: env.mailFrom, to: [env.notifyEmail], ...(c.email ? { reply_to: c.email } : {}),
+        from: env.mailFrom, to: env.notifyEmails || [env.notifyEmail], ...(c.email ? { reply_to: c.email } : {}),
         subject: `Consultation request: ${c.name} on ${c.date} at ${c.slot}`,
         html: `<h2>New consultation request</h2><p><b>${esc(c.name)}</b> · ${esc(c.phone)} · ${esc(c.email)}</p>
 <p>${esc(c.date)} at ${esc(c.slot)} (${esc(c.mode)})</p><p style="white-space:pre-wrap">${esc(c.topic)}</p>`,
@@ -40,6 +40,7 @@ export async function notifyConsultation(env, c, fetchImpl = fetch) {
 
 /* E-mails a quotation / invoice PDF to the client. Returns { ok, error }. */
 export async function sendDocumentEmail(env, doc, pdfBase64, fetchImpl = fetch, link = "") {
+  const site = env.siteUrl || "https://www.signaturestories.in";
   if (!env.resendKey) return { ok: false, error: "E-mail is not configured on the server (RESEND_API_KEY)." };
   const esc = (v) => String(v ?? "").replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
   const isInv = doc.kind === "invoice";
@@ -52,7 +53,7 @@ export async function sendDocumentEmail(env, doc, pdfBase64, fetchImpl = fetch, 
 <p style="font-size:18px"><b>Total: ${esc(total)}</b>${doc.dueDate ? `<br><span style="font-size:14px">${isInv ? "Due" : "Valid until"}: ${esc(doc.dueDate)}</span>` : ""}</p>
 ${link ? `<p><a href="${esc(link)}" style="display:inline-block;background:#8b6f33;color:#fff;padding:10px 22px;border-radius:24px;text-decoration:none">${isInv ? "View invoice" : "View and accept quotation"}</a></p>` : ""}
 <p>If you have any questions, simply reply to this email.</p>
-<p>Warm regards,<br>Team Signature Stories</p></div>`;
+<p>Warm regards,<br>Team Signature Stories<br><a href="${site}" style="color:#8b6f33">${site.replace(/^https?:\/\//, "")}</a></p></div>`;
   try {
     const res = await fetchImpl("https://api.resend.com/emails", {
       method: "POST",
@@ -76,7 +77,7 @@ export async function sendMail(env, { to, subject, html, replyTo, attachments },
     const res = await fetchImpl("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${env.resendKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: env.mailFrom, to: [to], ...(replyTo ? { reply_to: replyTo } : {}), subject, html, ...(attachments ? { attachments } : {}) }),
+      body: JSON.stringify({ from: env.mailFrom, to: Array.isArray(to) ? to : [to], ...(replyTo ? { reply_to: replyTo } : {}), subject, html, ...(attachments ? { attachments } : {}) }),
     });
     return res.ok;
   } catch { return false; }

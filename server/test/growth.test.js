@@ -114,3 +114,15 @@ test("invoice numbering can be reset, never duplicates, and payments show on the
   await request(app).put(`/api/admin/documents/${c.id}`).set(H(t)).send({ ...doc({ issueDate: `${y}-01-07` }), showPaymentHistory: true });
   assert.equal((await request(app).get(`/api/public/doc/${token}`)).body.payments.length, 1);
 });
+
+import { parseRecipients, parseSender, loadEnv } from "../src/config.js";
+test("mail settings tolerate common typos", () => {
+  assert.equal(parseSender("<anburaja@signaturestories.in>", "x"), "Signature Stories <anburaja@signaturestories.in>");
+  assert.equal(parseSender("Signature Stories <a@b.in>", "x"), "Signature Stories <a@b.in>");
+  assert.equal(parseSender("a@b.in", "x"), "Signature Stories <a@b.in>");
+  assert.equal(parseSender("nonsense", "fallback"), "fallback");
+  assert.deepEqual(parseRecipients("aloysiusfrank20.com, anbu.raja@gmail.com"), ["anbu.raja@gmail.com"]);
+  assert.deepEqual(parseRecipients("a@b.in; c@d.in"), ["a@b.in", "c@d.in"]);
+  const e = loadEnv({ NOTIFY_EMAIL: "bad", MAIL_FROM: "bad" });
+  assert.ok(e.notifyEmails.length === 1 && e.mailFrom.includes("hello@signaturestories.in") && e.siteUrl.startsWith("https://www."));
+});

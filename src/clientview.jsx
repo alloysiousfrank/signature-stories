@@ -86,7 +86,7 @@ export function ClientView({ token }) {
             </div>
           </>
         )}
-        <p className="cv-fine">{BUSINESS.name} · {BUSINESS.address}</p>
+        <p className="cv-fine">{BUSINESS.name} · {BUSINESS.address} · <a href={BUSINESS.websiteUrl} target="_blank" rel="noreferrer">{BUSINESS.website}</a></p>
       </div>
     </main>
   );

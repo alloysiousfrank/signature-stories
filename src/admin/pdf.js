@@ -171,6 +171,7 @@ export async function buildPdf(doc) {
     pdf.setFontSize(10); pdf.setTextColor(...MUTED); pdf.setFont("Cormorant", "italic");
     pdf.text(`${BUSINESS.name}  ·  ${BUSINESS.phone}  ·  ${BUSINESS.tagline}`, W / 2, H - 11, { align: "center" });
     pdf.setFont("Cormorant", "normal"); pdf.text(`Page ${i} of ${n}`, W - M, H - 11, { align: "right" });
+    pdf.setTextColor(...GOLD_DARK); pdf.textWithLink(BUSINESS.website, W / 2, H - 6.5, { url: BUSINESS.websiteUrl, align: "center" });
   }
   return pdf;
 }
