@@ -91,7 +91,7 @@ export function createApp({ env, inquiryRepo, adminRepo, consultRepo, docRepo, p
   app.use(cors({
     origin(origin, cb) {
       // Auth is by bearer token (no cookies), so also accept this project's own Vercel preview URLs.
-      if (!origin || env.clientOrigins.includes(origin) || /^https:\/\/signature-stories[a-z0-9-]*\.vercel\.app$/.test(origin)) return cb(null, true);
+      if (!origin || env.clientOrigins.includes(origin) || /^https:\/\/signature-stories[a-z0-9-]*\.vercel\.app$/.test(origin) || /^https:\/\/(www\.)?signaturestories\.in$/.test(origin)) return cb(null, true);
       cb(null, false);
     },
   }));
@@ -104,7 +104,7 @@ export function createApp({ env, inquiryRepo, adminRepo, consultRepo, docRepo, p
   const loginLimit = rateLimits ? limiter(15 * 60e3, 10, "Too many attempts. Please try again later.") : noop;
   const auth = requireAuth(env, adminRepo);
   const push = (payload) => notifyAdmins({ pushRepo: pushRepo || { all: async () => [], remove: async () => {} }, pushSender }, payload);
-  const siteBase = () => env.clientOrigins.find((o) => !/localhost|127\.0\.0\.1/.test(o)) || env.clientOrigins[0] || "https://signature-stories-qtsb.vercel.app";
+  const siteBase = () => env.clientOrigins.find((o) => !/localhost|127\.0\.0\.1/.test(o)) || "https://www.signaturestories.in";
   const shareLink = (token) => `${siteBase()}/#/q/${token}`;
   const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 

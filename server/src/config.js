@@ -11,7 +11,7 @@ export function loadEnv(src = process.env) {
     clientOrigins: list(src.CLIENT_ORIGINS || "http://localhost:5173"),
     resendKey: src.RESEND_API_KEY || "",
     notifyEmail: src.NOTIFY_EMAIL || "bengalisongaf@gmail.com",
-    mailFrom: src.MAIL_FROM || "Signature Stories <onboarding@resend.dev>",
+    mailFrom: src.MAIL_FROM || "Signature Stories <hello@signaturestories.in>",
     adminEmail: (src.ADMIN_EMAIL || "bengalisongaf@gmail.com").toLowerCase(),
     adminPassword: src.ADMIN_PASSWORD || "",
     vapidPublic: src.VAPID_PUBLIC_KEY || "",
