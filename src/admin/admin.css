@@ -150,3 +150,9 @@
 .adm-payform{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.5rem;margin-top:.7rem}
 .adm-check{display:flex;gap:.6rem;align-items:flex-start;margin:.8rem 0}.adm-check input{margin-top:.3rem}
 .adm-grid3{align-items:end}
+
+/* show / hide password */
+.adm-pw{position:relative;display:block}.adm-pw input{width:100%;box-sizing:border-box;padding-right:3rem}
+.adm-eye{position:absolute;right:.35rem;top:50%;transform:translateY(-50%);width:44px;height:44px;display:grid;place-items:center;border:0;background:transparent;color:#8b6f33;cursor:pointer;border-radius:50%}
+.adm-eye:hover{background:rgba(139,111,51,.1)}
+.adm-eye{-webkit-tap-highlight-color:transparent;outline-offset:-4px}.adm-eye:focus:not(:focus-visible){outline:none;background:transparent}

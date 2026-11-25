@@ -9,11 +9,29 @@ import Documents from "./Documents.jsx";
 import DeleteButton from "./DeleteButton.jsx";
 import Reports from "./Reports.jsx";
 import { inr, inr0 } from "./shared.js";
+import { installAppShell, useInstallPrompt } from "./pwa.js";
 import { chimeOn, disablePush, enablePush, pushState, setChime } from "./notify.js";
 import "./admin.css";
 
 const STATUS = { new: "New", contacted: "Contacted", booked: "Booked", closed: "Closed" };
 const fmt = (d) => new Date(d).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+
+/* Password field with a show / hide eye, visible on every screen size. */
+function PasswordInput({ value, onChange, ...rest }) {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="adm-pw">
+      <input {...rest} type={show ? "text" : "password"} value={value} onChange={onChange} />
+      <button type="button" className="adm-eye" aria-label={show ? "Hide password" : "Show password"} aria-pressed={show} onClick={() => setShow((s) => !s)}>
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          {show
+            ? <><path d="M3 3l18 18" /><path d="M10.6 6.2A9.8 9.8 0 0 1 12 6c5.5 0 9 6 9 6a15.7 15.7 0 0 1-3.2 3.9M6.6 7.6C4.3 9.3 3 12 3 12s3.5 6 9 6c1.5 0 2.9-.4 4.1-1" /><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" /></>
+            : <><path d="M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" /><circle cx="12" cy="12" r="3" /></>}
+        </svg>
+      </button>
+    </div>
+  );
+}
 
 function Login({ onDone }) {
   const [password, setPassword] = useState("");
@@ -43,7 +61,7 @@ function Login({ onDone }) {
       <form className="adm-card" onSubmit={submit}>
         <img src="/assests/logo.png" alt="Signature Stories" />
         <h1>Admin sign in</h1>
-        <input type="password" placeholder="Admin password" autoComplete="current-password" autoFocus required value={password} onChange={(e) => setPassword(e.target.value)} />
+        <PasswordInput placeholder="Admin password" autoComplete="current-password" autoFocus required value={password} onChange={(e) => setPassword(e.target.value)} />
         {err && <p className="adm-err" role="alert">{err}</p>}
         <button className="adm-btn" disabled={busy}>{busy ? "Signing in…" : "Sign in"}</button>
       </form>
@@ -267,14 +285,29 @@ function Settings() {
       <form className="adm-card adm-form" onSubmit={submit}>
         <h2>Change password</h2>
         <p className="adm-muted">Hi, {FIRST_NAME}. Choose a new password below.</p>
-        <input type="password" placeholder="Current password" autoComplete="current-password" required value={cur} onChange={(e) => setCur(e.target.value)} />
-        <input type="password" placeholder="New password (10+ characters)" autoComplete="new-password" minLength={10} required value={next} onChange={(e) => setNext(e.target.value)} />
+        <PasswordInput placeholder="Current password" autoComplete="current-password" required value={cur} onChange={(e) => setCur(e.target.value)} />
+        <PasswordInput placeholder="New password (10+ characters)" autoComplete="new-password" minLength={10} required value={next} onChange={(e) => setNext(e.target.value)} />
         {msg.text && <p className={msg.ok ? "adm-ok" : "adm-err"} role="status">{msg.text}</p>}
         <button className="adm-btn">Update password</button>
       </form>
+      <InstallCard />
       <NumberingSettings />
       <NotifySettings />
     </>
+  );
+}
+
+function InstallCard() {
+  const { canInstall, install, installed, isIos } = useInstallPrompt();
+  if (installed) return <section className="adm-card adm-form"><h2>Install the app</h2><p className="adm-ok">This device is already using the installed app.</p></section>;
+  return (
+    <section className="adm-card adm-form">
+      <h2>Install the app</h2>
+      <p className="adm-muted">Use the admin panel as its own app, with its own icon and window, on your phone, tablet or computer. It is free, and the website stays exactly as it is.</p>
+      {canInstall && <div className="adm-actions"><button className="adm-btn" onClick={install}>Install on this device</button></div>}
+      {isIos && <p><b>iPhone / iPad:</b> open this page in Safari, tap the Share button, choose <b>Add to Home Screen</b>, then <b>Add</b>.</p>}
+      {!canInstall && !isIos && <p><b>Android:</b> in Chrome tap the menu (three dots), then <b>Install app</b>. <b>Computer:</b> in Chrome or Edge click the install icon at the right end of the address bar.</p>}
+    </section>
   );
 }
 
@@ -409,10 +442,29 @@ export default function Admin({ sub, query }) {
   const [admin, setAdmin] = useState(null);
   const [checking, setChecking] = useState(!!getToken());
 
+  const [waking, setWaking] = useState(false);
   useEffect(() => {
     if (!getToken()) return;
-    adminApi.me().then((r) => setAdmin(r.admin)).catch(() => {}).finally(() => setChecking(false));
+    let live = true;
+    (async () => {
+      // Only a real "not signed in" answer (401) signs the admin out. A sleeping or unreachable server is waited for.
+      for (let attempt = 0; attempt < 12 && live; attempt += 1) {
+        try {
+          const r = await adminApi.me();
+          if (r.token) setToken(r.token); // renew the session on every open
+          if (live) { setAdmin(r.admin); setChecking(false); }
+          return;
+        } catch (x) {
+          if (x.status === 401) break;
+          if (live) setWaking(true);
+          await new Promise((res) => setTimeout(res, 5000));
+        }
+      }
+      if (live) setChecking(false);
+    })();
+    return () => { live = false; };
   }, []);
+  useEffect(() => installAppShell(), []);
 
   const signedIn = !!admin && !!getToken();
   useEffect(() => {
@@ -421,7 +473,7 @@ export default function Admin({ sub, query }) {
     if (signedIn && (sub === "login" || !NAV.some(([k]) => k === sub))) window.location.hash = "#/admin/dashboard";
   }, [checking, signedIn, sub]);
 
-  if (checking) return <div className="adm-root"><p className="adm-muted adm-center">Loading…</p></div>;
+  if (checking) return <div className="adm-root"><p className="adm-muted adm-center">{waking ? "Waking up the server… you stay signed in." : "Loading…"}</p></div>;
   if (!signedIn) return <div className="adm-root"><Login onDone={(a) => { setAdmin(a); window.location.hash = "#/admin/dashboard"; }} /></div>;
 
   const logout = () => { setToken(""); setAdmin(null); window.location.hash = "#/admin/login"; };

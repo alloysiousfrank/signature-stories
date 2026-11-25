@@ -155,7 +155,8 @@ export function createApp({ env, inquiryRepo, adminRepo, consultRepo, docRepo, p
     res.json({ token: signToken(env, admin), admin: { email: admin.email } });
   }));
 
-  app.get("/api/auth/me", auth, (req, res) => res.json({ admin: { email: req.admin.email } }));
+  // Every time the app opens, the session is renewed, so a device that is used regularly never has to sign in again.
+  app.get("/api/auth/me", auth, (req, res) => res.json({ admin: { email: req.admin.email }, token: signToken(env, req.admin) }));
 
   app.post("/api/auth/change-password", auth, wrap(async (req, res) => {
     const p = pwSchema.safeParse(req.body);

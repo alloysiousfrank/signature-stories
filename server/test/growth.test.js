@@ -126,3 +126,10 @@ test("mail settings tolerate common typos", () => {
   const e = loadEnv({ NOTIFY_EMAIL: "bad", MAIL_FROM: "bad" });
   assert.ok(e.notifyEmails.length === 1 && e.mailFrom.includes("hello@signaturestories.in") && e.siteUrl.startsWith("https://www."));
 });
+
+test("opening the app renews the session token", async () => {
+  const { app } = makeApp(); const t = await login(app);
+  const r = await request(app).get("/api/auth/me").set(H(t));
+  assert.equal(r.status, 200); assert.ok(r.body.token && r.body.token.split(".").length === 3);
+  assert.equal((await request(app).get("/api/auth/me").set(H(r.body.token))).status, 200);
+});
