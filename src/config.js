@@ -10,6 +10,7 @@ export const BUSINESS = {
   owner: "Anburaja Arul",
   ownerRole: "Founder & Lead Planner",
   phone: "+91 88701 84906",
+  email: "info@signaturestories.in",
   address: "Tiruppur",
   website: "www.signaturestories.in",
   websiteUrl: "https://www.signaturestories.in",
@@ -21,7 +22,7 @@ export const BUSINESS = {
 // Contact channels. WhatsApp opens a click-to-chat (no Meta Business API needed).
 // Leave WHATSAPP_NUMBER empty to hide the WhatsApp button.
 export const WHATSAPP_NUMBER = "918870184906"; // digits only with country code
-export const CONTACT_EMAIL = "hello@signaturestories.example"; // dummy
+export const CONTACT_EMAIL = "info@signaturestories.in";
 
 // While true, the sample testimonials and numbers below are shown so the
 // layout can be reviewed. Set to false (or fill REAL_* below) before launch.

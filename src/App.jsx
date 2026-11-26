@@ -189,7 +189,7 @@ function Footer() {
       <p>{BUSINESS.name}</p>
       <p className="footer-fine">{BUSINESS.tagline}</p>
       <p className="footer-fine">
-        {BUSINESS.address} · <a href={`tel:${BUSINESS.phone.replace(/\s/g, "")}`}>{BUSINESS.phone}</a>
+        {BUSINESS.address} · <a href={`tel:${BUSINESS.phone.replace(/\s/g, "")}`}>{BUSINESS.phone}</a> · <a href={`mailto:${BUSINESS.email}`}>{BUSINESS.email}</a>
       </p>
       <p className="footer-fine">
         <a href="#/quote">Get a quotation</a> · <a href="#/consult">Book a consultation</a> · Sample photos and video via{" "}

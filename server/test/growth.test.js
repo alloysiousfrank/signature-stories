@@ -124,7 +124,7 @@ test("mail settings tolerate common typos", () => {
   assert.deepEqual(parseRecipients("aloysiusfrank20.com, anbu.raja@gmail.com"), ["anbu.raja@gmail.com"]);
   assert.deepEqual(parseRecipients("a@b.in; c@d.in"), ["a@b.in", "c@d.in"]);
   const e = loadEnv({ NOTIFY_EMAIL: "bad", MAIL_FROM: "bad" });
-  assert.ok(e.notifyEmails.length === 1 && e.mailFrom.includes("hello@signaturestories.in") && e.siteUrl.startsWith("https://www."));
+  assert.ok(e.notifyEmails.length === 1 && e.mailFrom.includes("info@signaturestories.in") && e.replyTo === "info@signaturestories.in" && e.siteUrl.startsWith("https://www."));
 });
 
 test("opening the app renews the session token", async () => {

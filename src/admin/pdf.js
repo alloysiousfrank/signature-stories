@@ -54,7 +54,7 @@ export async function buildPdf(doc) {
   pdf.setFontSize(8.5); pdf.setTextColor(...GOLD_DARK); pdf.setFont("Cinzel", "normal");
   pdf.text("FROM", M, y); pdf.text(isInv ? "BILLED TO" : "PREPARED FOR", W / 2 + 4, y);
   pdf.setFont("Cormorant", "normal"); pdf.setTextColor(...INK); pdf.setFontSize(11.5);
-  const from = [BUSINESS.name, ...pdf.splitTextToSize(BUSINESS.address, W / 2 - M - 6), `Phone: ${BUSINESS.phone}`];
+  const from = [BUSINESS.name, ...pdf.splitTextToSize(BUSINESS.address, W / 2 - M - 6), `Phone: ${BUSINESS.phone}`, `Email: ${BUSINESS.email}`];
   pdf.text(from, M, y + 6);
   const c = doc.client;
   const to = [c.name, ...(c.address ? pdf.splitTextToSize(c.address, W / 2 - M - 6) : []), c.phone && `Phone: ${c.phone}`, c.email].filter(Boolean);
@@ -171,7 +171,7 @@ export async function buildPdf(doc) {
     pdf.setPage(i);
     pdf.setDrawColor(...GOLD); pdf.setLineWidth(0.4); pdf.line(M, H - 16, W - M, H - 16);
     pdf.setFontSize(10); pdf.setTextColor(...MUTED); pdf.setFont("Cormorant", "italic");
-    pdf.text(`${BUSINESS.name}  ·  ${BUSINESS.phone}  ·  ${BUSINESS.tagline}`, W / 2, H - 11, { align: "center" });
+    pdf.text(`${BUSINESS.name}  ·  ${BUSINESS.phone}  ·  ${BUSINESS.email}`, W / 2, H - 11, { align: "center" });
     pdf.setFont("Cormorant", "normal"); pdf.text(`Page ${i} of ${n}`, W - M, H - 11, { align: "right" });
     pdf.setTextColor(...GOLD_DARK); pdf.textWithLink(BUSINESS.website, W / 2, H - 6.5, { url: BUSINESS.websiteUrl, align: "center" });
   }

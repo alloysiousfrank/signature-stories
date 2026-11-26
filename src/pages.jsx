@@ -374,6 +374,7 @@ export function Contact({ query }) {
           <h2>{BUSINESS.owner}</h2>
           <p>{BUSINESS.ownerRole}</p>
           <p><a className="text-link" href={`tel:${BUSINESS.phone.replace(/\s/g, "")}`}>{BUSINESS.phone}</a></p>
+          <p><a className="text-link" href={`mailto:${BUSINESS.email}`}>{BUSINESS.email}</a></p>
           <p className="contact-quick">
             {WHATSAPP_NUMBER && <a className="ghost-link" href={`https://wa.me/${WHATSAPP_NUMBER}`} target="_blank" rel="noreferrer">WhatsApp</a>}
             <a className="ghost-link" href="#/quote">Get a quotation</a>

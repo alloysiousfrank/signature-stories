@@ -61,7 +61,7 @@ ${link ? `<p><a href="${esc(link)}" style="display:inline-block;background:#8b6f
       method: "POST",
       headers: { Authorization: `Bearer ${env.resendKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        from: env.mailFrom, to: [doc.client.email], reply_to: env.notifyEmail,
+        from: env.mailFrom, to: [doc.client.email], reply_to: env.replyTo || env.notifyEmail,
         subject: `${label} ${doc.number} from Signature Stories`, html,
         attachments: [{ filename: `${doc.number}.pdf`, content: pdfBase64 }],
       }),

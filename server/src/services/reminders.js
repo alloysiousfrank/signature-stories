@@ -32,7 +32,7 @@ export async function runReminders({ env, docRepo, inquiryRepo, consultRepo, fet
   const today = istDate(now);
   const site = env.siteUrl || "https://www.signaturestories.in";
   const wrap = (body) => wrapBody(body, site);
-  const mail = (to, subject, html) => sendMail(env, { to, subject, html, replyTo: env.notifyEmail }, fetchImpl);
+  const mail = (to, subject, html) => sendMail(env, { to, subject, html, replyTo: env.replyTo || env.notifyEmail }, fetchImpl);
 
   for (const d of await docRepo.sentInvoices()) {
     const balance = balanceOf(d);

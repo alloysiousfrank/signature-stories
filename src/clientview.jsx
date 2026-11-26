@@ -83,6 +83,7 @@ export function ClientView({ token }) {
             <div className="cv-actions">
               <button className="cv-btn ghost" disabled={!!busy} onClick={download}>{busy === "pdf" ? "Preparing…" : "Download PDF"}</button>
               <a className="cv-btn ghost" href={`tel:${BUSINESS.phone.replace(/\s/g, "")}`}>Call {BUSINESS.phone}</a>
+              <a className="cv-btn ghost" href={`mailto:${BUSINESS.email}`}>Email us</a>
             </div>
           </>
         )}
