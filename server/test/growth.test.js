@@ -133,3 +133,13 @@ test("opening the app renews the session token", async () => {
   assert.equal(r.status, 200); assert.ok(r.body.token && r.body.token.split(".").length === 3);
   assert.equal((await request(app).get("/api/auth/me").set(H(r.body.token))).status, 200);
 });
+
+test("edit total, save, then record the next part-payment keeps earlier payments", async () => {
+  const { app } = makeApp(); const t = await login(app);
+  const d = (await request(app).post("/api/admin/documents").set(H(t)).send(doc({ items: [{ description: "Decor", qty: 1, rate: 50000 }] }))).body;
+  await request(app).post(`/api/admin/documents/${d.id}/payments`).set(H(t)).send({ amount: 50000, date: "2026-11-21", method: "UPI" });
+  let r = await request(app).put(`/api/admin/documents/${d.id}`).set(H(t)).send({ ...doc({ items: [{ description: "Decor", qty: 1, rate: 75000 }] }), payments: [] });
+  assert.equal(r.body.amountPaid, 50000); assert.equal(r.body.status, "sent");
+  r = await request(app).post(`/api/admin/documents/${d.id}/payments`).set(H(t)).send({ amount: 24999, date: "2026-11-27", method: "UPI" });
+  assert.equal(r.status, 201); assert.equal(r.body.amountPaid, 74999); assert.equal(r.body.payments.length, 2);
+});

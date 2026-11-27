@@ -376,7 +376,7 @@ export function createApp({ env, inquiryRepo, adminRepo, consultRepo, docRepo, p
     if (d.status === "cancelled") return res.status(400).json({ error: "This invoice is cancelled." });
     const p = paySchema.safeParse(req.body);
     if (!p.success) return res.status(400).json({ error: "Enter a valid amount and date." });
-    if (p.data.amount > balanceOf(d) + 0.005) return res.status(400).json({ error: "That is more than the balance due." });
+    if (p.data.amount > balanceOf(d) + 0.005) return res.status(400).json({ error: `That is more than the balance due (₹${balanceOf(d).toLocaleString("en-IN")}). If you changed the items or total, press "Save changes" first.` });
     const base = { ...d, payments: [...settle(d, today()).payments, { pid: `p-${crypto.randomBytes(4).toString("hex")}`, ...p.data, at: new Date() }] };
     if (base.status === "draft") base.status = "sent";
     res.status(201).json(await docRepo.update(d.id, settle(base, today())));

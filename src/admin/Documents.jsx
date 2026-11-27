@@ -117,7 +117,10 @@ function Editor({ initial, onBack, onSaved }) {
   const addPay = async (e) => {
     e.preventDefault(); setErr(""); setMsg("");
     try {
-      const saved = await adminApi.addPayment(f.id, { ...pay, amount: Number(pay.amount) });
+      // Save any edits first, so the balance the server checks is the same total you see on screen.
+      const base = await save();
+      if (!base) return;
+      const saved = await adminApi.addPayment(base.id, { ...pay, amount: Number(pay.amount) });
       setF(saved); setPay((p) => ({ ...p, amount: "", note: "" })); setMsg("Payment recorded."); onSaved();
     } catch (x) { setErr(x.message); }
   };
@@ -125,7 +128,7 @@ function Editor({ initial, onBack, onSaved }) {
     try { setF(await adminApi.removePayment(f.id, pid)); onSaved(); } catch (x) { setErr(x.message); }
   };
   const paid = Number(f.amountPaid) || 0;
-  const balance = Math.max(0, t.total - paid);
+  const balance = Math.max(0, Math.round((t.total - paid) * 100) / 100);
   const convert = async () => {
     try { const inv = await adminApi.convertDoc(f.id); onSaved(); onBack(inv); } catch (e) { setErr(e.message); }
   };
