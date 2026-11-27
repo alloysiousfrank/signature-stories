@@ -16,9 +16,14 @@ async function request(path, { method = "GET", body, auth = false, raw = false }
   if (body !== undefined) headers["Content-Type"] = "application/json";
   if (auth) headers.Authorization = `Bearer ${getToken()}`;
   let res;
+  // A server that is still starting can leave a request hanging: give up after 25s so callers can retry.
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), 25000);
   try {
-    res = await fetch(`${BASE}${path}`, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
+    res = await fetch(`${BASE}${path}`, { method, headers, signal: ctl.signal, body: body === undefined ? undefined : JSON.stringify(body) });
+    clearTimeout(timer);
   } catch {
+    clearTimeout(timer);
     throw new ApiError("Cannot reach the server. Please try again.", 0);
   }
   if (auth && res.status === 401) {
